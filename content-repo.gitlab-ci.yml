@@ -1,22 +1,22 @@
 # =============================================================================
-#  GitLab CI  —  for the CONTENT repository
+#  GitLab CI  —  for a CONTENT repository
 #  (rename this file to ".gitlab-ci.yml" in that repo)
 #
-#  This repo holds ONLY the lecture content (the `content/` folder). The build
-#  engine — pom.xml, src/, templates/, assets/, jbake.properties — lives in a
-#  SEPARATE repo, `lecture-gen`. The pipeline checks `lecture-gen` out into this
-#  project's working directory and builds the site from it, pointing the engine
-#  at this repo's content via the engine's documented `-Dcontent.dir` override.
-#  Nothing in either repo needs code changes.
+#  This repo holds ONLY the content (the `content/` folder). The build engine —
+#  pom.xml, src/, templates/, assets/, jbake.properties — lives in the separate
+#  repository `site-gen` on GitHub. The pipeline clones the engine next to this
+#  project's content and builds the site from it, pointing the engine at this
+#  repo's content via `-Dcontent.dir` and at an output folder of its own via
+#  `-Dsite.dir`. Neither repository needs a code change for this.
 #
 #  Assumptions (adjust the `variables:` block below if they differ):
-#   * The lectures live under a top-level `content/` directory in THIS repo
-#     (same layout as inside lecture-gen). If they sit at the repo root instead,
-#     set  CONTENT_DIR: "$CI_PROJECT_DIR".
-#   * `lecture-gen` is on the same GitLab instance, and its
-#     Settings > CI/CD > "Job token permissions" allowlist includes THIS project
-#     (so this job's CI_JOB_TOKEN is allowed to clone it). Otherwise replace the
-#     clone credentials with a Deploy Token / PAT stored as a CI/CD variable.
+#   * The content lives under a top-level `content/` directory in THIS repo.
+#     If it sits at the repo root instead, set  CONTENT_DIR: "$CI_PROJECT_DIR".
+#   * The engine repository is PUBLIC, so the clone needs no credentials, and
+#     the runner is allowed to reach github.com. For a private engine, store a
+#     GitHub token with read access as a masked CI/CD variable (e.g.
+#     $GITHUB_TOKEN) and clone with
+#       https://x-access-token:${GITHUB_TOKEN}@github.com/<owner>/<repo>.git
 # =============================================================================
 
 image: maven:3.9-eclipse-temurin-17
@@ -26,16 +26,18 @@ stages:
   - deploy
 
 variables:
-  # group/project path of the engine repo on this GitLab instance.
-  LECTURE_GEN_PATH: "dpublic/lecture-gen"
-  # Branch or tag of the engine to build with. Pin to a tag for reproducibility.
-  LECTURE_GEN_REF: "main"
-  # This repo's content root: the folder that contains index.md, meta.properties,
-  # the per-lecture folders (tswe/, labsw/, ...), images/, ...
+  # Engine repository and the state to build with. Pin ENGINE_REF to a tag for
+  # reproducible builds instead of following the moving branch.
+  ENGINE_URL: "https://github.com/pfeiferd/site-gen.git"
+  ENGINE_REF: "main"
+  # This repo's content root: the folder holding index.md, meta.properties,
+  # the language or lecture folders, images/, ...
   CONTENT_DIR: "$CI_PROJECT_DIR/content"
+  # Where the finished site is written (inside the project dir so it can be
+  # picked up as an artifact).
+  SITE_DIR: "$CI_PROJECT_DIR/site"
   # Keep the Maven local repo inside the project dir so it can be cached.
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
-  # Shallow-clone the engine for speed.
   GIT_DEPTH: "1"
 
 cache:
@@ -50,19 +52,16 @@ build:
     # Harmless if the base image already provides them; drop if not needed.
     - apt-get update -qq && apt-get install -y -qq fontconfig fonts-dejavu-core
     # Check out the build engine INTO this project's working directory, as a
-    # sibling of `content/` (the ".engine" folder is not scanned as content and,
-    # being inside $CI_PROJECT_DIR, can still be captured as an artifact).
+    # sibling of `content/` (the ".engine" folder is not scanned as content).
     - rm -rf .engine
-    - git clone --depth 1 --branch "$LECTURE_GEN_REF"
-      "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${LECTURE_GEN_PATH}.git"
-      .engine
-    # Build: engine from lecture-gen (.engine/pom.xml provides its own
-    # templates/assets/jbake.properties), content from THIS repo.
+    - git clone --depth 1 --branch "$ENGINE_REF" "$ENGINE_URL" .engine
+    # Build: engine from site-gen (.engine/pom.xml brings its own templates,
+    # assets and jbake.properties), content from THIS repo, site into $SITE_DIR.
     - mvn -B --no-transfer-progress -f .engine/pom.xml
-      clean package -Dcontent.dir="$CONTENT_DIR"
+      clean package -Dcontent.dir="$CONTENT_DIR" -Dsite.dir="$SITE_DIR"
   artifacts:
     paths:
-      - .engine/target/website/
+      - site/
     expire_in: 1 hour
 
 pages:
@@ -70,7 +69,7 @@ pages:
   needs: [build]
   script:
     - rm -rf public
-    - mv .engine/target/website public
+    - mv site public
   artifacts:
     paths:
       - public

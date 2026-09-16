@@ -78,8 +78,15 @@ second checkout step.
 Note the difference to this project’s own `.github/workflows/pages.yml`: that one builds
 **this** repository – engine plus the tutorial – and publishes it as the engine’s demo site.
 
-The two `*.gitlab-ci.yml` files do the same on a GitLab instance and are kept for projects that
-still live there.
+**In CI (GitLab).** A content repo that lives on a GitLab instance uses
+`content-repo.gitlab-ci.yml` the same way (copy it there as `.gitlab-ci.yml`). It clones this
+engine **from GitHub** – `ENGINE_URL`, `ENGINE_REF` – so the code base stays in one place; the
+runner only needs to reach github.com, and as long as the engine repository is public the clone
+needs no credentials. For a private engine, put a token into a masked CI/CD variable and use it
+in the clone URL, as the comment at the top of the file describes.
+
+`.gitlab-ci.yml` in this repository is the leftover pipeline for building the engine itself on a
+GitLab instance; on GitHub that job is done by `.github/workflows/pages.yml`.
 
 **Locally.** A small `pom.xml` in the content repo can drive the engine, so that `mvn package`
 works there as usual: an `exec` execution runs `mvn -f <engine>/pom.xml package
@@ -124,7 +131,9 @@ pom.xml                      Maven build
 .github/workflows/pages.yml  pipeline of THIS repo (engine + tutorial → GitHub Pages)
 content-repo.github-workflow.yml   template for a content repo (copy it there as
                              .github/workflows/pages.yml)
-.gitlab-ci.yml, content-repo.gitlab-ci.yml    the same two for a GitLab instance
+content-repo.gitlab-ci.yml   the same for a content repo on a GitLab instance
+                             (clones this engine from GitHub)
+.gitlab-ci.yml               leftover: building the engine itself on GitLab
 target/website/              generated website (build output)
 ```
 
