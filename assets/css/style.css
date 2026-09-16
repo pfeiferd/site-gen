@@ -1,0 +1,1954 @@
+/* Lecture Notes – HS Heilbronn, Faculty of Computer Science */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --color-primary: #354e91;
+    --color-primary-dark: #2a3d74;
+    --color-primary-light: #009fd5;
+    --color-accent: #e3f5fc;
+    --color-warm: #e87109;
+    --color-text: #353c45;
+    --color-text-light: #666666;
+    --color-border: #d0d8e0;
+    --color-bg: #f5f7fa;
+    --color-white: #ffffff;        /* echtes Weiss (z. B. Text auf dunklem Overlay) */
+    /* Flaechen- und Detailfarben - im Nachtmodus umgeschaltet (s. [data-theme="dark"]). */
+    --color-surface: #ffffff;      /* Kopfzeile, Seitenleiste, Fusszeile, Karten */
+    --color-on-primary: #ffffff;   /* Text auf primaerfarbenem Grund (aktive Schalter) */
+    /* Mouse-over von Bedienelementen. Hell: unveraendert Akzent + Primaerfarbe. */
+    --color-hover-bg: var(--color-accent);
+    --color-hover-fg: var(--color-primary);
+    --color-code-bg: #eef2f6;      /* Code im Fliesstext */
+    --color-code-border: #dde5ec;
+    --color-pre-bg: #f6f8fa;       /* Codebloecke */
+    --color-pre-border: #e2e8f0;
+    --color-row-alt: #f7f9fb;      /* Zebra-Zeilen in Tabellen */
+    --color-quote-from: #fdf6ea;   /* Verlauf im Blockzitat */
+    --color-mark: #fff3b0;         /* Suchtreffer-Markierung */
+    --font-main: 'Rubik', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    --nav-width: 155px;
+    --nav-width-collapsed: 48px;
+    --header-height: 56px;
+    --sticky-top: calc(var(--header-height) + 4px);
+    color-scheme: light;
+}
+
+/* ============================================================
+   NACHTMODUS
+   Es werden nur Variablen getauscht - alle Regeln unten bleiben unveraendert.
+   data-theme setzt das Kopf-Skript VOR dem Rendern (kein Aufblitzen).
+   ============================================================ */
+
+html[data-theme="dark"] {
+    --color-primary: #8ab0f0;
+    --color-primary-dark: #b6cdf7;
+    --color-primary-light: #45c3f0;
+    /* Tonflaechen muessen im Dunkeln HELLER als die Grundflaeche sein, sonst
+       sind sie unsichtbar (im Hellmodus sind sie umgekehrt dunkler als Weiss). */
+    --color-accent: #31406a;
+    --color-warm: #f2913c;
+    --color-text: #dde3ea;
+    --color-text-light: #9ba6b2;
+    /* Haarlinien brauchen auf dunklem Grund deutlich mehr Abstand als auf
+       hellem - sonst verschwinden die Umrandungen (Sprach-/Ansicht-Umschalter,
+       Tabellen, Karten). Bewusst kraeftiger als das helle Gegenstueck. */
+    --color-border: #5a6675;
+    --color-bg: #12171d;
+    --color-surface: #1b212a;
+    --color-on-primary: #12171d;   /* dunkler Text auf hellem Primaerton */
+    /* Mouse-over: im Dunkeln als helle Flaeche mit dunklem Inhalt - ein dezenter
+       Tonwert waere hier kaum wahrnehmbar. */
+    --color-hover-bg: #e8edf5;
+    --color-hover-fg: #12171d;
+    --color-code-bg: #232b36;
+    --color-code-border: #4a5564;
+    --color-pre-bg: #161c24;
+    --color-pre-border: #4a5564;
+    --color-row-alt: #2a323f;
+    --color-quote-from: #43371f;
+    --color-mark: #6b5610;
+    /* Scrollbalken und Formularelemente vom Browser dunkel zeichnen lassen. */
+    color-scheme: dark;
+}
+
+body {
+    font-family: var(--font-main);
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--color-text);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(44,95,138,0.07), transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(232,163,61,0.07), transparent 40%),
+        var(--color-bg);
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    /* Platz fuer den fest fixierten Footer (Hoehe wird per JS gesetzt). */
+    padding-bottom: var(--footer-height, 2.4rem);
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--color-primary-light);
+    text-decoration: underline;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.site-header {
+    background: var(--color-surface);
+    border-bottom: 3px solid transparent;
+    border-image: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 55%, var(--color-warm) 100%) 1;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.6rem;
+    min-height: var(--header-height);
+    /* Gleitender Uebergang beim Ein-/Ausklappen - Gegenstueck zur Seitenleiste,
+       die ihre flex-basis animiert. Hier animiert die Hoehe der Kopfzeile. */
+    overflow: hidden;
+    transition: min-height 0.2s ease, padding-top 0.2s ease, padding-bottom 0.2s ease;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Kopfbereich ein-/ausklappen - Gegenstueck zum Seitenleisten-Umschalter.
+   Der Umschalter steht links neben dem Logo in der Kopfzeile selbst.
+   Ausgeklappt -> Doppelpfeil nach oben ("einklappen"); eingeklappt -> nach
+   unten ("ausklappen"). Eingeklappt bleibt nur der Umschalter stehen, der Rest
+   der Kopfzeile (Logo, Start, Suche, Ansicht, Sprache, Drucken) wird
+   ausgeblendet. Die Kopfhoehe geht in --sticky-top ein (siehe footer.ftl). */
+.header-toggle-bar {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.header-toggle {
+    display: flex;
+    align-items: center;
+    padding: 0 0.2rem;
+    transition: padding-top 0.2s ease, padding-bottom 0.2s ease;
+    background: transparent;
+    color: var(--color-primary);
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    border-radius: 4px;
+}
+
+.header-toggle:hover {
+    background: var(--color-accent);
+    color: var(--color-primary);
+}
+
+.header-toggle-arrow {
+    display: flex;
+    align-items: center;
+}
+
+.header-toggle-icon {
+    width: 28px;
+    height: 28px;
+    display: block;
+}
+
+.header-toggle-expand { display: none; }
+
+.header-collapsed .header-inner > :not(.header-toggle-bar),
+.header-expanding .header-inner > :not(.header-toggle-bar) { display: none; }
+
+.header-collapsed .header-inner {
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+/* Eingeklappt zaehlt jede Zeile: der senkrechte Innenabstand des Umschalters
+   faellt weg, es bleibt nur ein Hauch Luft. Die beiden Selektoren decken Seiten
+   mit und ohne Seitenleiste ab - der zweite muss die Regel
+   ".site-header.with-sidebar .header-toggle" ueberstimmen (Spezifitaet). */
+.header-collapsed .site-header .header-toggle,
+.header-collapsed .site-header.with-sidebar .header-toggle {
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+}
+.header-collapsed .header-toggle-collapse { display: none; }
+.header-collapsed .header-toggle-expand { display: block; }
+
+/* Auf Vorlesungsseiten sitzt der Umschalter in einer Spalte, die genau dort
+   beginnt und genau so breit ist wie die Seitenleiste darunter -> der
+   Doppelpfeil steht senkrecht ueber dem Pfeil der Seitenleiste. Zu verrechnen:
+   .header-inner hat 1rem Innenabstand, .page-wrapper keinen, und .sidebar-col
+   hat 1px Rahmen links (box-sizing: border-box). */
+.site-header.with-sidebar .header-toggle-bar {
+    flex: 0 0 calc(var(--nav-width) - 1px);
+    margin-left: calc(-1rem + 1px);
+    transition: flex-basis 0.2s ease;
+}
+
+.site-header.with-sidebar .header-toggle {
+    width: 100%;
+    justify-content: flex-end;
+    padding: 0.3rem 0.55rem;   /* wie .nav-toggle */
+}
+
+/* Seitenleiste eingeklappt -> ihr Pfeil rueckt mittig in die schmale Leiste;
+   der Kopf-Pfeil macht dasselbe, damit beide uebereinander bleiben. */
+.nav-collapsed .site-header.with-sidebar .header-toggle-bar {
+    flex-basis: calc(var(--nav-width-collapsed) - 1px);
+}
+
+.nav-collapsed .site-header.with-sidebar .header-toggle {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo-img {
+    height: 34px;
+    width: auto;
+    display: block;
+}
+
+.logo-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    letter-spacing: -0.01em;
+}
+
+.logo-sub {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-light);
+    line-height: 1.3;
+    border-left: 2px solid var(--color-border);
+    padding-left: 0.7rem;
+    text-decoration: none;
+}
+
+.logo-sub:hover {
+    color: var(--color-primary);
+}
+
+/* Kein flex:1 -> die Nav spannt keinen leeren Grow-Bereich zwischen "Start" und
+   der Suchgruppe auf; die Suchgruppe wird ueber margin-left:auto rechts gehalten. */
+.main-nav {
+    flex: 0 0 auto;
+}
+
+.main-nav ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+}
+
+.main-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--color-text);
+    /* Gleicher Radius wie bei Drucken, Vollbild und Nachtmodus - die Flaeche
+       beim Ueberfahren soll ueberall dieselbe Form haben. */
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+    text-decoration: none;
+}
+
+.main-nav a:hover {
+    background: var(--color-accent);
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.main-nav-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    opacity: 0.7;
+}
+
+.main-nav a:hover .main-nav-icon,
+.main-nav a.active .main-nav-icon { opacity: 1; }
+
+.main-nav a.active {
+    background: var(--color-accent);
+    color: var(--color-primary);
+    font-weight: 700;
+    border-bottom: 3px solid transparent;
+    border-image: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 55%, var(--color-warm) 100%) 1;
+    padding-bottom: calc(0.4rem - 3px);
+}
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+
+.page-wrapper {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    flex: 1 0 auto;
+}
+
+/* ============================================================
+   SIDEBAR NAV
+   ============================================================ */
+
+.sidebar-col {
+    flex: 0 0 var(--nav-width);
+    background: var(--color-surface);
+    border-left: 1px solid var(--color-border);
+    transition: flex-basis 0.2s ease;
+}
+
+.sidebar-nav {
+    background: var(--color-surface);
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+    position: sticky;
+    top: var(--sticky-top);
+    max-height: calc(100vh - var(--sticky-top) - 0.75rem);
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.nav-header,
+.nav-foot {
+    flex: 0 0 auto;
+}
+
+.nav-header {
+    background: var(--color-surface);
+    cursor: pointer;
+}
+
+.nav-header:hover {
+    background: var(--color-accent);
+}
+
+.nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    padding: 0.3rem 0.55rem;
+    background: transparent;
+    color: var(--color-primary);
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.nav-toggle-arrow {
+    display: flex;
+    align-items: center;
+}
+
+.nav-toggle-icon {
+    width: 28px;
+    height: 28px;
+    display: block;
+}
+
+/* Ausgeklappt -> "Einklappen" (chevrons-left); Eingeklappt -> "Ausklappen" (chevrons-right) */
+.nav-toggle-expand { display: none; }
+
+.nav-collapsed .sidebar-col {
+    flex-basis: var(--nav-width-collapsed);
+}
+
+.nav-collapsed .nav-toggle {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.nav-collapsed .nav-toggle-collapse { display: none; }
+.nav-collapsed .nav-toggle-expand { display: block; }
+
+.nav-collapsed .product-label-text,
+.nav-expanding .product-label-text {
+    display: none;
+}
+
+.nav-collapsed .nav-scroll,
+.nav-collapsed .nav-foot,
+.nav-expanding .nav-scroll,
+.nav-expanding .nav-foot {
+    display: none;
+}
+
+.nav-collapsed .product-label-vert { display: block; }
+
+/* Eingeklappt: senkrechter Schriftzug (von unten nach oben lesbar) oben,
+   Vorlesungs-Icon darunter, beides mittig in der schmalen Leiste. */
+.nav-collapsed .product-label {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.nav-collapsed .product-icon {
+    order: 1;
+}
+
+.product-label {
+    background: transparent;
+    color: var(--color-primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 0.45rem 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.product-label-text {
+    font-size: 0.87rem;
+    color: var(--color-primary);
+}
+
+.product-label-vert {
+    display: none;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    color: var(--color-primary);
+    font-size: 0.87rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
+}
+
+.sidebar-nav nav ul {
+    list-style: none;
+    padding: 0.2rem 0;
+}
+
+.sidebar-nav nav a {
+    display: block;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-nav nav a:hover {
+    background: var(--color-accent);
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.sidebar-nav nav a.active {
+    background: var(--color-accent);
+    color: var(--color-primary);
+    font-weight: 600;
+    border-bottom: 3px solid transparent;
+    border-image: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 55%, var(--color-warm) 100%) 1;
+    padding-bottom: calc(0.4rem - 3px);
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+
+.main-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-article {
+    position: relative;
+    background: var(--color-surface);
+    border: none;
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    border-radius: 0;
+    flex: 1 1 auto;
+}
+
+.page-article-body {
+    padding: 1.1rem 1.25rem;
+}
+
+.page-article h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary-dark);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid transparent;
+    border-image: linear-gradient(90deg, var(--color-primary) 0%, var(--color-warm) 100%) 1;
+}
+
+.page-article h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.4rem;
+    padding-left: 0.6rem;
+    border-left: 3px solid var(--color-warm);
+}
+
+.page-article h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+    margin-top: 1rem;
+    margin-bottom: 0.3rem;
+}
+
+.page-article p {
+    margin-bottom: 0.5rem;
+}
+
+.page-article ul,
+.page-article ol {
+    margin-bottom: 0.5rem;
+    padding-left: 1.25rem;
+}
+
+.page-article li {
+    margin-bottom: 0.2rem;
+}
+
+.page-article blockquote {
+    border-left: 4px solid var(--color-warm);
+    background: linear-gradient(135deg, var(--color-quote-from) 0%, var(--color-accent) 100%);
+    padding: 0.5rem 0.9rem;
+    margin: 0.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+    color: var(--color-text-light);
+}
+
+.page-article blockquote p {
+    margin-bottom: 0.15rem;
+}
+
+/* Content images: passen sich der verfuegbaren Breite der Inhaltsspalte an
+   (skalieren also mit der Fenstergroesse), ohne sie je zu ueberschreiten. */
+.content-img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1rem auto;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+}
+
+/* Markdown-Bilder (![](...) ohne content-img-Klasse) ebenfalls auf die
+   Spaltenbreite begrenzen, damit sie nie ueber das Layout hinauslaufen. */
+.page-article-body img:not(.content-img) {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Karte (```map im Markdown, Aufbau siehe page.ftl; Leaflet).
+   Die Hoehe setzt das Template je Karte als style-Attribut; hier steht nur,
+   wie sie sich in den Textfluss einfuegt. */
+.map {
+    width: 100%;
+    margin: 1rem 0;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    /* Leaflet legt Bedienelemente ueber die Karte - sie duerfen nicht ueber
+       dem klebenden Kopf der Seite landen. */
+    z-index: 0;
+}
+
+/* Filterleiste ueber der Karte: Auswahlliste, Suchfeld, Zuruecksetzen und ein
+   Zaehler "sichtbar / gesamt". Bricht auf schmalen Schirmen um. */
+.map-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 1rem 0 0.4rem;
+    font-size: 0.9rem;
+}
+
+.map-filter-field {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.map-filter-select,
+.map-filter-text {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.map-filter-text {
+    min-width: 12rem;
+}
+
+/* Platzhalter wie in den Suchfeldern: gedaempft, aber dem Farbschema folgend.
+   Die Vorgabe des Browsers (ein festes Grau) waere im Nachtmodus auf dunklem
+   Grund kaum zu lesen. */
+.map-filter-text::placeholder {
+    color: var(--color-text-light);
+    opacity: 1;
+}
+
+.map-filter-reset {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    color: var(--color-primary);
+    cursor: pointer;
+}
+
+.map-filter-reset:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-hover-fg);
+}
+
+.map-filter-count {
+    color: var(--color-text-light);
+    font-variant-numeric: tabular-nums;
+}
+
+.map-list-title {
+    margin: 0.9rem 0 0.2rem;
+}
+
+/* Trefferliste unter der Karte (list: true). Ein Klick springt zum Punkt. */
+.map-list {
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+    columns: 2;
+    column-gap: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.map-list li {
+    break-inside: avoid;
+    margin-bottom: 0.3rem;
+}
+
+.map-list span {
+    color: var(--color-text-light);
+}
+
+@media (max-width: 700px) {
+    .map-list { columns: 1; }
+}
+
+.map-popup-title {
+    color: var(--color-primary);
+}
+
+.map-popup-subtitle,
+.map-popup-line {
+    color: var(--color-text);
+}
+
+.map .leaflet-container {
+    font-family: var(--font-main);
+}
+
+/* Die Kacheln kommen von aussen und sind immer hell; im Nachtmodus wuerde die
+   Karte sonst als weisse Flaeche blenden. Ein leichtes Abdunkeln genuegt -
+   Farben umzukehren wuerde Karten unlesbar machen. */
+html[data-theme="dark"] .map .leaflet-tile-pane {
+    filter: brightness(0.82) saturate(0.9);
+}
+
+@media print {
+    /* Gedruckt bleibt der Kartenausschnitt stehen, Bedienelemente nicht. */
+    .map .leaflet-control-container { display: none; }
+}
+
+/* Bildergalerie (```gallery im Markdown, Aufbau siehe page.ftl): Raster aus
+   Miniaturen mit Bildunterschrift. Die Miniaturen fliessen um und zentrieren
+   sich; die Breite steuert --gallery-width (je Galerie per style-Attribut
+   ueberschreibbar). Geklickt wird wie bei jedem Inhaltsbild -> Lightbox. */
+.gallery {
+    --gallery-width: 150px;
+    /* Einheitliches Kachelformat: Bilder unterschiedlicher Seitenverhaeltnisse
+       stehen sonst verschieden hoch und die Bildunterschriften verspringen. */
+    --gallery-ratio: 4 / 3;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0.8rem;
+    margin: 1rem 0;
+}
+
+.gallery figure {
+    margin: 0;
+    width: var(--gallery-width);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+/* Die Miniatur traegt den Rahmen selbst (kein <a> wie bei einer klassischen
+   Galerie - die Vollansicht uebernimmt die Lightbox). */
+.gallery img {
+    display: block;
+    width: 100%;
+    aspect-ratio: var(--gallery-ratio);
+    /* Das ganze Bild bleibt sichtbar (kein Anschnitt) und wird in die Kachel
+       eingepasst - Screenshots im Hochformat verlieren so nichts. */
+    object-fit: contain;
+    padding: 0.25rem;
+    box-sizing: border-box;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.gallery img:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+}
+
+.gallery figcaption {
+    font-size: 0.78rem;
+    line-height: 1.25;
+    text-align: center;
+    color: var(--color-text);
+}
+
+/* Inhaltsbilder sind anklickbar -> Vollansicht (Lightbox). Der Zeiger
+   signalisiert die Vergroesserung; Icons (z. B. Vorlesungskacheln) bleiben
+   normale Bilder. */
+.page-article-body img:not(.lecture-card-icon) {
+    cursor: zoom-in;
+}
+
+/* Vollbild-Lightbox: verdeckt die Seite und zeigt das Bild so gross wie
+   moeglich. Klick irgendwo (oder Esc) schliesst sie wieder. */
+.img-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5vmin;
+    background: rgba(18, 24, 36, 0.88);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    cursor: zoom-out;
+}
+
+.img-lightbox.open {
+    display: flex;
+}
+
+.img-lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    border-radius: 4px;
+    background: var(--color-surface);
+    box-shadow: 0 10px 45px rgba(0, 0, 0, 0.55);
+}
+
+.img-lightbox-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.9rem;
+    width: 2.4rem;
+    height: 2.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    line-height: 1;
+    color: var(--color-white);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.img-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Automatisches Inhaltsverzeichnis */
+.page-toc {
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    padding: 0.6rem 1rem 0.8rem;
+    margin: 1rem 0 1.6rem;
+}
+
+.page-toc-title {
+    margin: 0 0 0.4rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-primary);
+}
+
+.page-toc ul {
+    counter-reset: toc;
+    list-style: none;
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.page-toc > ul {
+    padding-left: 0;
+}
+
+.page-toc li {
+    counter-increment: toc;
+    margin: 0.1rem 0;
+}
+
+.page-toc li > a::before {
+    content: counters(toc, ".") "\00a0\00a0";
+    color: inherit;
+    font-variant-numeric: tabular-nums;
+}
+
+.page-toc a {
+    font-size: 0.9rem;
+}
+
+html {
+    scroll-padding-top: calc(var(--sticky-top) + 1.25rem);
+    /* Sprungmarken innerhalb einer Seite (Inhaltsverzeichnis, Anker) gleiten,
+       statt zu springen - so bleibt nachvollziehbar, wohin es geht.
+       scroll-padding-top oben sorgt dafuer, dass das Ziel nicht unter der
+       Kopfzeile landet. Im Folienmodus wechselt ein Anker die Folie; dort
+       scrollt ohnehin nichts. */
+    scroll-behavior: smooth;
+    overflow-y: scroll;
+    scrollbar-width: auto;
+    scrollbar-color: var(--color-border) transparent;
+}
+
+/* Wer im System "Bewegung reduzieren" gewaehlt hat, bekommt den Sprung ohne
+   Animation - inklusive der Sprünge, die das Skript selbst ausloest. */
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+}
+
+html::-webkit-scrollbar { width: 14px; }
+html::-webkit-scrollbar-track { background: var(--color-accent); }
+html::-webkit-scrollbar-thumb {
+    background: var(--color-primary-light);
+    border: 3px solid var(--color-accent);
+    border-radius: 8px;
+}
+html::-webkit-scrollbar-thumb:hover { background: var(--color-primary-light); }
+
+.page-article h1 > a[id],
+.page-article h2 > a[id],
+.page-article h3 > a[id],
+.page-article h4 > a[id] {
+    outline: none;
+}
+
+.heading-num {
+    color: inherit;
+    font-variant-numeric: tabular-nums;
+    margin-right: 0.4em;
+}
+
+.page-article code {
+    font-family: 'Consolas', 'Menlo', 'Courier New', monospace;
+    font-size: 0.86em;
+    background: var(--color-code-bg);
+    color: var(--color-primary-dark);
+    padding: 0.05em 0.35em;
+    border: 1px solid var(--color-code-border);
+    border-radius: 3px;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+.page-article pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    white-space: pre;
+    font-size: 0.85rem;
+}
+
+.page-article table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.4rem;
+    font-size: 0.9rem;
+}
+
+.page-article th,
+.page-article td {
+    border: 1px solid var(--color-border);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: break-word;
+}
+
+.page-article thead th {
+    background: var(--color-accent);
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.page-article tbody tr:nth-child(even) {
+    background: var(--color-row-alt);
+}
+
+.page-article tbody tr:hover {
+    background: var(--color-accent);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.site-footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    color: var(--color-text-light);
+}
+
+.footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* ============================================================
+   DRUCK-LINK
+   ============================================================ */
+
+.nav-print {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--color-text);
+    text-decoration: none;
+    white-space: nowrap;
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.nav-print:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-hover-fg);
+    text-decoration: none;
+}
+
+.nav-icon {
+    width: 15px;
+    height: 15px;
+    display: block;
+    opacity: 0.7;
+}
+
+/* Icon beim Hover NICHT abdunkeln – gleiche Graufaerbung wie die Lupe halten */
+
+/* ============================================================
+   SUCHE - HEADER (Suchfeld links neben "Drucken")
+   ============================================================ */
+
+.print-search-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.header-search {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.header-search input {
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--color-border);
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    font-size: 0.83rem;
+    width: 160px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.header-search:focus-within input,
+.header-search:focus-within button {
+    border-color: var(--color-primary);
+}
+
+.header-search button {
+    padding: 0.3rem 0.55rem;
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    line-height: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.header-search button:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-hover-fg);
+}
+
+.search-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    opacity: 0.7;
+}
+
+/* ============================================================
+   SUCHE - ERGEBNISSEITE
+   ============================================================ */
+
+.search-form-main {
+    margin-bottom: 1.75rem;
+}
+
+.search-input-row {
+    display: flex;
+    gap: 0;
+    max-width: 480px;
+}
+
+.search-input-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.search-input-row input:focus {
+    border-color: var(--color-primary);
+}
+
+.search-input-row button {
+    padding: 0.55rem 0.8rem;
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    line-height: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.search-input-row button:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-hover-fg);
+}
+
+.search-input-row:focus-within input,
+.search-input-row:focus-within button {
+    border-color: var(--color-primary);
+}
+
+.result-count {
+    color: var(--color-text);
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+
+.result-list {
+    list-style: none;
+    padding: 0;
+}
+
+.result-item {
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.65rem 0;
+}
+
+.result-item:last-child { border-bottom: none; }
+
+.result-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.result-snippet {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    line-height: 1.5;
+    margin: 0;
+}
+
+mark {
+    background: var(--color-mark);
+    color: var(--color-text);
+    padding: 0 0.1em;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
+.no-results { color: var(--color-text-light); font-style: italic; }
+
+/* ============================================================
+   SPRACHUMSCHALTER (DE / EN)
+   ============================================================ */
+
+.lang-switch {
+    display: inline-flex;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.lang-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.6rem;   /* wie .view-switch-btn */
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 15px;         /* Textzeile = Icon-Hoehe der View-Switch-Buttons -> gleiche Gesamthoehe */
+    font-family: inherit;
+    background: var(--color-surface);
+    color: var(--color-text-light);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+
+.lang-switch-btn + .lang-switch-btn {
+    border-left: 1px solid var(--color-border);
+}
+
+.lang-switch-btn:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-hover-fg);
+    text-decoration: none;
+}
+
+/* Aktive Sprache rein aus dem html-Attribut data-lang (im <head> gesetzt) ->
+   kein Flackern beim Laden/Umschalten. */
+:root[data-lang="de"] .lang-switch-btn[data-lang="de"],
+:root[data-lang="en"] .lang-switch-btn[data-lang="en"] {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+/* ============================================================
+   ANSICHT-UMSCHALTER (Dokument / Slides)
+   ============================================================ */
+
+.view-switch {
+    display: inline-flex;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.view-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: var(--color-surface);
+    color: var(--color-text-light);
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.view-switch-icon {
+    width: 15px;
+    height: 15px;
+    display: block;
+    opacity: 0.7; /* gleiche Graufaerbung wie die Lupe (.search-icon) */
+}
+
+/* Nur die Icons anzeigen – Beschriftungen "Dokument"/"Slides"/"Drucken"
+   entfallen (Zugaenglichkeit via aria-label/title an den Buttons). */
+.view-switch-label,
+.nav-label { display: none; }
+
+/* Nachtmodus- und Vollbild-Schalter - optisch wie der Drucken-Knopf daneben. */
+.theme-toggle,
+.fullscreen-toggle {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.5rem;
+    background: transparent;
+    color: var(--color-text);
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.theme-toggle:hover,
+.fullscreen-toggle:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-hover-fg);
+}
+
+.theme-toggle-icons,
+.fullscreen-toggle-icons {
+    display: flex;
+    align-items: center;
+}
+
+.theme-toggle-icon,
+.fullscreen-toggle-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+/* Hell -> Mond anbieten ("dunkel schalten"); dunkel -> Sonne ("hell schalten"). */
+.theme-toggle-sun { display: none; }
+html[data-theme="dark"] .theme-toggle-moon { display: none; }
+html[data-theme="dark"] .theme-toggle-sun { display: block; }
+
+/* Normal -> "Vollbild ein"; im Vollbild -> "Vollbild aus". Die Klasse
+   is-fullscreen setzt das Skript aus dem fullscreenchange-Ereignis, damit auch
+   ein Verlassen per Esc oder F11 richtig dargestellt wird. */
+.fullscreen-toggle-exit { display: none; }
+html.is-fullscreen .fullscreen-toggle-enter { display: none; }
+html.is-fullscreen .fullscreen-toggle-exit { display: block; }
+
+/* Kann der Browser kein Vollbild (oder ist es untersagt), wird der Schalter
+   gar nicht erst angeboten. */
+html.no-fullscreen .fullscreen-toggle { display: none; }
+
+.view-switch-btn + .view-switch-btn {
+    border-left: 1px solid var(--color-border);
+}
+
+.view-switch-btn:hover {
+    background: var(--color-hover-bg);
+    color: var(--color-hover-fg);
+}
+
+/* Aktiver Zustand allein aus der html-Klasse -> kein Flackern beim Laden */
+html:not(.mode-slides) .view-switch-btn[data-view="doc"],
+html.mode-slides .view-switch-btn[data-view="slides"] {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+/* Icon des aktiven Buttons weiss einfaerben (SVG via <img> -> Filter noetig) */
+html:not(.mode-slides) .view-switch-btn[data-view="doc"] .view-switch-icon,
+html.mode-slides .view-switch-btn[data-view="slides"] .view-switch-icon {
+    filter: brightness(0) invert(1);
+    opacity: 1; /* aktives Icon: reines Weiss, volle Deckkraft */
+}
+
+/* Vorlesungs-Icon in der Seitenleiste */
+.product-icon {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    color: var(--color-primary);
+    opacity: 0.7; /* einheitlich mit den uebrigen Icons */
+}
+
+/* ============================================================
+   VORLESUNGS-KACHELN (Startseite)
+   ============================================================ */
+
+.lecture-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1.5rem 0 2rem;
+}
+
+.lecture-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 240px;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+    text-decoration: none;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.lecture-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 14px rgba(44,95,138,0.15);
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.lecture-card-icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    color: var(--color-primary);
+    opacity: 0.7; /* einheitliche Graufaerbung wie die uebrigen Icons */
+}
+
+.lecture-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+}
+
+/* ============================================================
+   ANSICHTS-SELEKTIVE INHALTE
+   ============================================================ */
+
+/* .doc-only: nur in der Dokumentansicht sichtbar */
+html.mode-slides .doc-only { display: none !important; }
+
+/* .slides-only: nur in der Folienansicht sichtbar */
+html:not(.mode-slides) .slides-only { display: none !important; }
+
+/* ============================================================
+   SLIDE-MODUS (Bildschirm)
+   ============================================================ */
+
+/* Dokumentansicht: Folien fliessen nahtlos untereinander (keine Sonderoptik). */
+
+html.mode-slides .page-article-body { padding: 0; }
+
+html.mode-slides .slide { display: none; }
+
+html.mode-slides .slide.active {
+    display: block;
+    padding: 1.75rem 2.25rem 5rem;   /* unten Platz fuer die Pfeile */
+    min-height: calc(100vh - var(--header-height) - 2.5rem);
+}
+
+html.mode-slides .slide-inner {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Erste Folie (Titel) etwas luftiger */
+html.mode-slides .slide.active .heading-num { font-weight: 700; }
+
+/* ============================================================
+   FOLIEN-NAVIGATION (fixierte Pfeile unten links/rechts)
+   ============================================================ */
+
+.slide-nav { display: none; }
+
+html.mode-slides.has-multi .slide-nav { display: block; }
+
+.slide-nav-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 200;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-size: 1.6rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.slide-nav-icon {
+    width: 32px;
+    height: 32px;
+    display: block;
+}
+
+.slide-nav-btn:hover:not(:disabled) {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.slide-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+    box-shadow: none;
+}
+
+.slide-prev { left: 1.25rem; }
+.slide-next { right: 1.25rem; }
+
+.slide-counter {
+    position: fixed;
+    bottom: 2.85rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-light);
+    background: var(--color-surface);
+    padding: 0.2rem 0.7rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 700px) {
+    .page-article-body { padding: 1.25rem 1rem; }
+}
+
+/* Schmale Screens: Suchfeld weg, nur die randlose Lupe bleibt
+   (fuehrt per Klick zur Suchseite) */
+@media (max-width: 620px) {
+    /* Schmaler Header: Suchfeld auf die Lupe reduzieren und den Logo-Zusatz
+       "Fakultät Informatik" ausblenden -> mehr Platz, spaeterer Umbruch. */
+    .header-search input {
+        display: none;
+    }
+
+    .logo-sub {
+        display: none;
+    }
+
+    .header-search button {
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        padding: 0.4rem 0.5rem;
+    }
+
+    .header-search button:hover {
+        background: var(--color-accent);
+    }
+
+    /* Rechte Icon-Gruppe kompakter -> kleinere Mindestbreite, spaeterer Umbruch. */
+    .header-inner { column-gap: 0.35rem; }
+    .print-search-group { gap: 0.25rem; }
+    .view-switch-btn,
+    .lang-switch-btn { padding: 0.3rem 0.4rem; }
+    .nav-print { padding: 0.4rem 0.35rem; }
+    .main-nav a { padding: 0.4rem 0.3rem; }
+}
+
+/* ---- Nachtmodus: was sich nicht allein ueber Variablen loesen laesst ------ */
+
+/* Das Hochschullogo ist dunkelblau/schwarz auf transparentem Grund und waere
+   auf dunklem Grund unlesbar. invert() + hue-rotate() hellt es auf und behaelt
+   den blauen Charakter (reines invert() ergaebe Gelb). */
+html[data-theme="dark"] .logo-img {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+/* Die Oberflaechen-Icons werden als <img> eingebunden und zeichnen mit
+   stroke="currentColor" - in einer eigenstaendigen SVG-Datei loest das zu
+   SCHWARZ auf, unabhaengig von der Seitenfarbe. Auf dunklem Grund sind sie
+   damit praktisch unsichtbar (gemessen: Strichhelligkeit 9..32 bei einem
+   Untergrund von ~26). Im Nachtmodus werden sie deshalb nach Weiss gefiltert;
+   die vorhandene Deckkraft von 0.7 bleibt und ergibt dasselbe dezente Grau
+   wie Schwarz-auf-Weiss im Hellmodus. */
+html[data-theme="dark"] .main-nav-icon,
+html[data-theme="dark"] .search-icon,
+html[data-theme="dark"] .nav-icon,
+html[data-theme="dark"] .view-switch-icon,
+html[data-theme="dark"] .product-icon,
+html[data-theme="dark"] .lecture-card-icon {
+    filter: brightness(0) invert(1);
+}
+
+/* Ausnahme: Das Icon des AKTIVEN Ansicht-Buttons sitzt auf dem hellen
+   Primaerton. Dort bleibt es dunkel - genau wie der Text (--color-on-primary). */
+html[data-theme="dark"]:not(.mode-slides) .view-switch-btn[data-view="doc"] .view-switch-icon,
+html[data-theme="dark"].mode-slides .view-switch-btn[data-view="slides"] .view-switch-icon {
+    filter: none;
+    opacity: 1;
+}
+
+/* Ausgegraute Schalter (Folien-Navigation am ersten/letzten Slide): 30 %
+   Deckkraft verschwinden auf dunklem Grund fast vollstaendig - im Nachtmodus
+   etwas kraeftiger, bleibt aber klar als "inaktiv" erkennbar. */
+html[data-theme="dark"] .slide-nav-btn:disabled {
+    opacity: 0.5;
+}
+
+/* Auf der hellen Hover-Flaeche muessen die sonst weiss gefilterten <img>-Icons
+   wieder dunkel werden, sonst verschwinden sie beim Ueberfahren. */
+html[data-theme="dark"] .nav-print:hover .nav-icon,
+html[data-theme="dark"] .header-search button:hover .search-icon,
+html[data-theme="dark"] .search-input-row button:hover .search-icon,
+html[data-theme="dark"] .view-switch-btn:hover .view-switch-icon {
+    filter: none;
+    opacity: 1;
+}
+
+/* highlight.css liefert das helle GitHub-Theme und setzt an code.hljs einen
+   weissen Hintergrund. Im Nachtmodus faellt der weg, damit der Hintergrund des
+   Codeblocks durchscheint; die Token-Farben kommen aus dem dunklen Theme.
+   (PlantUML-Diagramme bringen ihren eigenen weissen Grund mit und bleiben
+   deshalb auch im Nachtmodus lesbar - sie werden bewusst nicht invertiert.) */
+html[data-theme="dark"] .hljs { background: transparent; color: #c9d1d9; }
+html[data-theme="dark"] .hljs-doctag,
+html[data-theme="dark"] .hljs-keyword,
+html[data-theme="dark"] .hljs-meta .hljs-keyword,
+html[data-theme="dark"] .hljs-template-tag,
+html[data-theme="dark"] .hljs-template-variable,
+html[data-theme="dark"] .hljs-type,
+html[data-theme="dark"] .hljs-variable.language_ { color: #ff7b72; }
+html[data-theme="dark"] .hljs-title,
+html[data-theme="dark"] .hljs-title.class_,
+html[data-theme="dark"] .hljs-title.class_.inherited__,
+html[data-theme="dark"] .hljs-title.function_ { color: #d2a8ff; }
+html[data-theme="dark"] .hljs-attr,
+html[data-theme="dark"] .hljs-attribute,
+html[data-theme="dark"] .hljs-literal,
+html[data-theme="dark"] .hljs-meta,
+html[data-theme="dark"] .hljs-number,
+html[data-theme="dark"] .hljs-operator,
+html[data-theme="dark"] .hljs-selector-attr,
+html[data-theme="dark"] .hljs-selector-class,
+html[data-theme="dark"] .hljs-selector-id,
+html[data-theme="dark"] .hljs-variable { color: #79c0ff; }
+html[data-theme="dark"] .hljs-meta .hljs-string,
+html[data-theme="dark"] .hljs-regexp,
+html[data-theme="dark"] .hljs-string { color: #a5d6ff; }
+html[data-theme="dark"] .hljs-built_in,
+html[data-theme="dark"] .hljs-symbol { color: #ffa657; }
+html[data-theme="dark"] .hljs-code,
+html[data-theme="dark"] .hljs-comment,
+html[data-theme="dark"] .hljs-formula { color: #8b949e; }
+html[data-theme="dark"] .hljs-name,
+html[data-theme="dark"] .hljs-quote,
+html[data-theme="dark"] .hljs-selector-pseudo,
+html[data-theme="dark"] .hljs-selector-tag { color: #7ee787; }
+html[data-theme="dark"] .hljs-section { color: #79c0ff; }
+html[data-theme="dark"] .hljs-bullet { color: #f2cc60; }
+html[data-theme="dark"] .hljs-subst,
+html[data-theme="dark"] .hljs-emphasis,
+html[data-theme="dark"] .hljs-strong { color: #c9d1d9; }
+
+/* ============================================================
+   DRUCK-LAYOUT
+   ============================================================ */
+
+.print-header { display: none; }
+
+@media print {
+    /* Gedruckt wird immer hell - der Nachtmodus gilt nur am Bildschirm. */
+    html[data-theme="dark"] {
+        --color-primary: #354e91;
+        --color-primary-dark: #2a3d74;
+        --color-primary-light: #009fd5;
+        --color-accent: #e3f5fc;
+        --color-warm: #e87109;
+        --color-text: #353c45;
+        --color-text-light: #666666;
+        --color-border: #d0d8e0;
+        --color-bg: #f5f7fa;
+        --color-surface: #ffffff;
+        --color-on-primary: #ffffff;
+        --color-hover-bg: #e3f5fc;
+        --color-hover-fg: #354e91;
+        --color-code-bg: #eef2f6;
+        --color-code-border: #dde5ec;
+        --color-pre-bg: #f6f8fa;
+        --color-pre-border: #e2e8f0;
+        --color-row-alt: #f7f9fb;
+        --color-quote-from: #fdf6ea;
+        --color-mark: #fff3b0;
+        color-scheme: light;
+    }
+    html[data-theme="dark"] .logo-img,
+    html[data-theme="dark"] .main-nav-icon,
+    html[data-theme="dark"] .search-icon,
+    html[data-theme="dark"] .nav-icon,
+    html[data-theme="dark"] .view-switch-icon,
+    html[data-theme="dark"] .product-icon,
+    html[data-theme="dark"] .lecture-card-icon { filter: none; }
+    html[data-theme="dark"] .hljs { background: #fff; color: #24292e; }
+
+    @page {
+        size: A4 portrait;
+        /* Etwas groesserer unterer Rand: Platz fuer die @page-Fussboxen (Titel,
+           Seite x/y, Copyright), die pro Seite unten stehen. */
+        margin: 1.5cm 2cm 1.7cm;
+    }
+
+    .site-header,
+    .sidebar-col,
+    .sidebar-nav,
+    .site-footer,
+    .nav-print {
+        display: none !important;
+    }
+
+    body {
+        background: #fff;
+        color: #000;
+        font-size: 10pt;
+        line-height: 1.4;
+    }
+
+    .page-wrapper {
+        display: block;
+        margin: 0;
+        padding: 0;
+    }
+
+    .main-content { width: 100%; }
+
+    /* Kein Kopf/Logo-Band auf der Dokument-Druckseite (unerwuenscht). */
+    .print-header {
+        display: none;
+        align-items: center;
+        gap: 0.4cm;
+        margin-bottom: 0.5cm;
+        padding-bottom: 0.1cm;
+        border-bottom: 0.5pt solid #000;
+    }
+
+    .print-logo-text {
+        font-size: 10pt;
+        font-weight: 700;
+        color: #000;
+    }
+
+    .page-article { border: none; box-shadow: none; }
+    .page-article-body { padding: 0; }
+
+    .page-article h1 {
+        font-size: 15pt;
+        color: #000;
+        border-bottom: 1pt solid #000;
+        margin-bottom: 0.4cm;
+    }
+
+    .page-article h2 {
+        font-size: 12pt;
+        color: #000;
+        margin-top: 0.5cm;
+        padding-left: 0;
+        border-left: none;
+    }
+
+    .page-article h3 {
+        font-size: 10.5pt;
+        color: #000;
+        margin-top: 0.35cm;
+    }
+
+    .page-article a { color: #000; text-decoration: none; }
+    .page-article a[href^="http"]::after {
+        content: " (" attr(href) ")";
+        font-size: 9pt;
+        color: #555;
+    }
+
+    h1, h2, h3 { page-break-after: avoid; }
+    li, blockquote { page-break-inside: avoid; }
+
+    .content-img {
+        max-width: 100%;
+        border: 0.5pt solid #ccc;
+    }
+
+    /* Lightbox nie mitdrucken. */
+    .img-lightbox { display: none !important; }
+
+    /* Galerie: Miniatur und Bildunterschrift bleiben zusammen auf einer Seite. */
+    .gallery figure { page-break-inside: avoid; break-inside: avoid; }
+    .gallery img { border: 0.5pt solid #ccc; }
+
+    /* Dokument-Druck: Seitenumbrueche an den Folienenden statt mitten in einer
+       Folie. Mehrere Folien duerfen auf eine Seite, solange sie zusammen passen;
+       ist eine Folie fuer den Rest der Seite zu gross, beginnt sie auf der
+       naechsten. (Eine Folie, die groesser als eine Seite ist, wird vom Browser
+       zwangslaeufig doch umbrochen.) */
+    html:not(.mode-slides) .slide {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    html:not(.mode-slides) .slide + .slide { margin-top: 0.6cm; }
+}
+
+/* Slide-Footer: nur im Druck sichtbar. */
+.slide-print-footer { display: none; }
+
+/* Laufender Fuss der Dokument-Druckansicht: optisch wie der Folien-Fuss, per
+   position:fixed am unteren Rand JEDER Druckseite wiederholt (Titel links,
+   Copyright rechts). Der reservierte @page-Unterrand haelt den Textfluss frei.
+   top:auto/bottom:0 stellt sicher, dass er unten steht und nicht als Kopf auf
+   der ersten Seite erscheint. Nur im Dokument-Druck (nicht am Bildschirm, nicht
+   im Slide-Druck). */
+.doc-print-footer { display: none; }
+
+@media print {
+    html:not(.mode-slides) .doc-print-footer {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: 0;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        font-size: 9pt;
+        color: #555;
+        background: #fff;
+        border-top: 0.5pt solid #bbb;
+        padding-top: 2mm;
+    }
+}
+
+/* Slide-Modus im Druck: jede Folie auf eine eigene Seite (Querformat via JS-@page).
+   @page-Masse: A4 quer (297x210mm), Rand 1cm oben/unten + 1.4cm links/rechts
+   -> bedruckbare Flaeche 190mm x 269.2mm. */
+@media print {
+    html.mode-slides body {
+        font-size: 18pt;
+        line-height: 1.45;
+        padding-bottom: 0;
+    }
+
+    html.mode-slides .page-wrapper {
+        max-width: none;
+        width: 100%;
+    }
+
+    html.mode-slides .slide-nav,
+    html.mode-slides .slide-counter { display: none !important; }
+
+    html.mode-slides .slide {
+        display: flex !important;
+        flex-direction: column;
+        /* 4mm unter der bedruckbaren Hoehe (A4 quer, 1cm Rand oben/unten = 190mm):
+           Puffer gegen Browser-Rundungen und Inhalte, die die Folie leicht
+           ueberschreiten – verhindert leere Folgeseiten. Die groesseren Schriften
+           (18pt statt 13pt) fuellen die Seite trotzdem visuell gut aus. */
+        height: 186mm;
+        overflow: hidden;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    /* Umbruch VOR jeder Folie ausser der ersten -> genau eine Folie pro Seite,
+       ohne Leerseite dazwischen und ohne erzwungenen Umbruch nach der letzten. */
+    html.mode-slides .slide + .slide {
+        break-before: page;
+        page-break-before: always;
+    }
+
+    html.mode-slides .slide-inner {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        max-width: none;
+        margin: 0;
+        padding: 0.6rem 0.5rem 0.4rem;
+        box-sizing: border-box;
+    }
+
+    /* Groessere Schriften fuer Praesentation. */
+    html.mode-slides .slide-inner h1 {
+        font-size: 30pt;
+        line-height: 1.2;
+        margin-bottom: 0.5rem;
+        border-bottom: 1pt solid #000;
+        padding-bottom: 0.25rem;
+    }
+
+    html.mode-slides .slide-inner h2 {
+        font-size: 22pt;
+        line-height: 1.25;
+        margin-top: 0.6rem;
+        margin-bottom: 0.3rem;
+        padding-left: 0;
+        border-left: none;
+    }
+
+    html.mode-slides .slide-inner h3 {
+        font-size: 18pt;
+        margin-top: 0.4rem;
+    }
+
+    html.mode-slides .slide-inner p,
+    html.mode-slides .slide-inner li {
+        font-size: 18pt;
+        line-height: 1.45;
+        margin-bottom: 0.3rem;
+    }
+
+    html.mode-slides .slide-inner ul,
+    html.mode-slides .slide-inner ol {
+        margin: 0.2rem 0 0.3rem 1.4em;
+    }
+
+    html.mode-slides .slide-inner code {
+        font-size: 15pt;
+    }
+
+    html.mode-slides .slide-inner pre code {
+        font-size: 13pt;
+    }
+
+    html.mode-slides .slide-inner table {
+        font-size: 15pt;
+    }
+
+    /* Bilder so begrenzen, dass sie samt Ueberschrift und Text auf die Seite
+       passen. max-height orientiert sich an der nutzbaren Innenhoehe abzueglich
+       Platz fuer Titel und Footer. */
+    html.mode-slides .slide-inner img {
+        display: block;
+        max-width: 100%;
+        max-height: 130mm;
+        height: auto;
+        margin: 0.4rem auto;
+    }
+
+    html.mode-slides .slide-print-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        font-size: 9pt;
+        color: #555;
+        border-top: 0.5pt solid #bbb;
+        padding-top: 2mm;
+        margin-top: 2mm;
+    }
+
+    html.mode-slides .slide-footer-num {
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* Druck-Kopf (Logo) nur einmal ganz oben, nicht auf jeder Folie wiederholen. */
+    html.mode-slides .print-header { display: none; }
+}
+
+/* ---- LaTeX / Mathe (MathJax) ------------------------------------------- */
+/* Abgesetzte Formeln zentriert, mit Platz darum; breite Formeln scrollen
+   horizontal statt das Layout zu sprengen. Inline-Formeln bleiben im Textfluss. */
+.math-block {
+    margin: 1.1em 0;
+    text-align: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+mjx-container[display="true"] {
+    margin: 1.1em 0 !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* ---- Syntax-Highlighting (highlight.js) -------------------------------- */
+/* Codebloecke bekommen eine dezente Karte; das Theme steuert nur die Token-
+   Farben (Hintergrund/Padding kommen aus dem Seiten-Layout, nicht vom Theme). */
+.page-article pre {
+    background: var(--color-pre-bg);
+    border: 1px solid var(--color-pre-border);
+    border-radius: 6px;
+    padding: 0.85em 1.05em;
+    overflow-x: auto;
+}
+.page-article pre code,
+.page-article pre code.hljs {
+    background: transparent;
+    padding: 0;
+}

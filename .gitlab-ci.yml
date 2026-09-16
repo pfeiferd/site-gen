@@ -1,0 +1,33 @@
+image: maven:3.9-eclipse-temurin-17
+
+stages:
+  - build
+  - deploy
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+cache:
+  key: maven-cache
+  paths:
+    - .m2/repository/
+
+build:
+  stage: build
+  script:
+    - mvn package -B --no-transfer-progress
+  artifacts:
+    paths:
+      - target/website/
+    expire_in: 1 hour
+
+pages:
+  stage: deploy
+  needs: [build]
+  script:
+    - mv target/website public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.hs-heilbronn</groupId>
+    <artifactId>lectures-website</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>Lecture Notes Website</name>
+    <description>Lecture notes website – HS Heilbronn, Faculty of Computer Science</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jbake.version>2.7.0</jbake.version>
+        <plantuml.version>1.2024.7</plantuml.version>
+        <!-- Zentral konfigurierbare Lage des Quell-Content-Ordners; wird als Arg an die
+             Build-Tools durchgereicht. Ueberschreibbar per -Dcontent.dir=... . Staging-/
+             Output-Verzeichnisse bleiben unter ${project.build.directory}. -->
+        <content.dir>${project.basedir}/content</content.dir>
+        <!-- Wohin die fertige Site geschrieben wird. Vorgabe: target/website
+             dieses Projekts. Ein Inhaltsprojekt, das die Engine mit seinem
+             eigenen content/ startet, setzt hier sein eigenes Verzeichnis ein
+             (-Dsite.dir=...) - sonst ueberschriebe seine Site die der Engine.
+             Das uebrige Bauverzeichnis (Zwischenstaende, Jar) bleibt bewusst
+             hier: JBake liest sein Quellverzeichnis relativ zu diesem Projekt. -->
+        <site.dir>${project.build.directory}/website</site.dir>
+    </properties>
+
+    <dependencies>
+        <!-- Wird in das ausfuehrbare Jar gebuendelt und rendert die PlantUML-Diagramme. -->
+        <dependency>
+            <groupId>net.sourceforge.plantuml</groupId>
+            <artifactId>plantuml</artifactId>
+            <version>${plantuml.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <!--
+          Bauablauf (mvn package):
+            1. compile          – kompiliert den PlantumlPreprocessor
+            2. package / shade  – baut das ausfuehrbare Fat-Jar (inkl. PlantUML)
+            3. package / exec   – fuehrt das Jar aus und rendert die SVGs nach assets/
+            4. package / jbake  – generiert die Website (kopiert die frischen SVGs mit)
+          shade, exec und jbake laufen in derselben Phase (package); die Reihenfolge
+          ergibt sich aus der Plugin-Reihenfolge weiter unten.
+        -->
+        <plugins>
+            <!-- 1. PlantumlPreprocessor kompilieren. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
+
+            <!-- 2. Ausfuehrbares Fat-Jar bauen (PlantUML mit eingebettet). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>shade-plantuml-tool</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>de.hshn.lectures.build.PlantumlPreprocessor</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 3. Das gebaute Jar ausfuehren und die Diagramme rendern. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>render-plantuml</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-Djava.awt.headless=true</argument>
+                                <argument>-jar</argument>
+                                <argument>${project.build.directory}/${project.build.finalName}.jar</argument>
+                                <argument>${content.dir}</argument>
+                                <argument>${project.build.directory}</argument>
+                                <argument>${site.dir}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 4. Website generieren (kopiert die frisch gerenderten SVGs mit). -->
+            <plugin>
+                <groupId>org.jbake</groupId>
+                <artifactId>jbake-maven-plugin</artifactId>
+                <version>${jbake.version}</version>
+                <configuration>
+                    <inputDirectory>${project.basedir}</inputDirectory>
+                    <outputDirectory>${site.dir}</outputDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jbake-generate</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

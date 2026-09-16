@@ -1,0 +1,78 @@
+# =============================================================================
+#  GitLab CI  —  for the CONTENT repository
+#  (rename this file to ".gitlab-ci.yml" in that repo)
+#
+#  This repo holds ONLY the lecture content (the `content/` folder). The build
+#  engine — pom.xml, src/, templates/, assets/, jbake.properties — lives in a
+#  SEPARATE repo, `lecture-gen`. The pipeline checks `lecture-gen` out into this
+#  project's working directory and builds the site from it, pointing the engine
+#  at this repo's content via the engine's documented `-Dcontent.dir` override.
+#  Nothing in either repo needs code changes.
+#
+#  Assumptions (adjust the `variables:` block below if they differ):
+#   * The lectures live under a top-level `content/` directory in THIS repo
+#     (same layout as inside lecture-gen). If they sit at the repo root instead,
+#     set  CONTENT_DIR: "$CI_PROJECT_DIR".
+#   * `lecture-gen` is on the same GitLab instance, and its
+#     Settings > CI/CD > "Job token permissions" allowlist includes THIS project
+#     (so this job's CI_JOB_TOKEN is allowed to clone it). Otherwise replace the
+#     clone credentials with a Deploy Token / PAT stored as a CI/CD variable.
+# =============================================================================
+
+image: maven:3.9-eclipse-temurin-17
+
+stages:
+  - build
+  - deploy
+
+variables:
+  # group/project path of the engine repo on this GitLab instance.
+  LECTURE_GEN_PATH: "dpublic/lecture-gen"
+  # Branch or tag of the engine to build with. Pin to a tag for reproducibility.
+  LECTURE_GEN_REF: "main"
+  # This repo's content root: the folder that contains index.md, meta.properties,
+  # the per-lecture folders (tswe/, labsw/, ...), images/, ...
+  CONTENT_DIR: "$CI_PROJECT_DIR/content"
+  # Keep the Maven local repo inside the project dir so it can be cached.
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  # Shallow-clone the engine for speed.
+  GIT_DEPTH: "1"
+
+cache:
+  key: maven-cache
+  paths:
+    - .m2/repository/
+
+build:
+  stage: build
+  script:
+    # PlantUML's Smetana renderer needs fontconfig + a font in headless CI.
+    # Harmless if the base image already provides them; drop if not needed.
+    - apt-get update -qq && apt-get install -y -qq fontconfig fonts-dejavu-core
+    # Check out the build engine INTO this project's working directory, as a
+    # sibling of `content/` (the ".engine" folder is not scanned as content and,
+    # being inside $CI_PROJECT_DIR, can still be captured as an artifact).
+    - rm -rf .engine
+    - git clone --depth 1 --branch "$LECTURE_GEN_REF"
+      "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${LECTURE_GEN_PATH}.git"
+      .engine
+    # Build: engine from lecture-gen (.engine/pom.xml provides its own
+    # templates/assets/jbake.properties), content from THIS repo.
+    - mvn -B --no-transfer-progress -f .engine/pom.xml
+      clean package -Dcontent.dir="$CONTENT_DIR"
+  artifacts:
+    paths:
+      - .engine/target/website/
+    expire_in: 1 hour
+
+pages:
+  stage: deploy
+  needs: [build]
+  script:
+    - rm -rf public
+    - mv .engine/target/website public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main

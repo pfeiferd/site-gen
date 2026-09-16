@@ -1,0 +1,40 @@
+[
+ {
+  "lat": 49.1469,
+  "lon": 9.2166,
+  "title": "Bildungscampus",
+  "subtitle": "Hochschule Heilbronn",
+  "lines": [
+   "Bildungscampus 13",
+   "74076 Heilbronn"
+  ],
+  "href": "https://www.hs-heilbronn.de",
+  "hrefText": "hs-heilbronn.de",
+  "ort": "Heilbronn",
+  "ort_en": "Heilbronn"
+ },
+ {
+  "lat": 49.1225,
+  "lon": 9.2108,
+  "title": "Campus Sontheim",
+  "subtitle": "Hochschule Heilbronn",
+  "lines": [
+   "Max-Planck-Straße 39",
+   "74081 Heilbronn"
+  ],
+  "ort": "Heilbronn",
+  "ort_en": "Heilbronn"
+ },
+ {
+  "lat": 49.201,
+  "lon": 9.2249,
+  "title": "Campus Künzelsau",
+  "subtitle": "Reinhold-Würth-Hochschule",
+  "lines": [
+   "Daimlerstraße 35",
+   "74653 Künzelsau"
+  ],
+  "ort": "Künzelsau",
+  "ort_en": "Kuenzelsau"
+ }
+]

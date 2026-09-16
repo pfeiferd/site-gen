@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="480" height="240" rx="10" fill="#eef3f8"/>
+  <rect x="24" y="24" width="432" height="192" rx="8" fill="#ffffff" stroke="#c9d6e3"/>
+  <circle cx="120" cy="120" r="52" fill="#e2701d" opacity="0.9"/>
+  <rect x="210" y="72" width="210" height="20" rx="6" fill="#33566f"/>
+  <rect x="210" y="108" width="170" height="14" rx="5" fill="#8aa4b8"/>
+  <rect x="210" y="132" width="196" height="14" rx="5" fill="#8aa4b8"/>
+  <rect x="210" y="156" width="120" height="14" rx="5" fill="#8aa4b8"/>
+  <text x="120" y="127" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="700">SVG</text>
+  <text x="240" y="212" text-anchor="middle" fill="#5b6b78" font-size="13">Beispielbild aus content/tutorial/common/images/beispiel.svg</text>
+</svg>
