@@ -66,16 +66,20 @@ Engine and content can live in separate repositories: this project brings `pom.x
 `templates/`, `assets/` and `jbake.properties`, the other one only its `content/` folder. Two
 ways to build such a repo, and they can be used side by side:
 
-**In CI (GitLab).** Copy `content-repo.gitlab-ci.yml` from this repository into the content
-repo as `.gitlab-ci.yml` and check the `variables:` block – `LECTURE_GEN_PATH` (where the
-engine lives on the GitLab instance), `LECTURE_GEN_REF` (pin it to a tag for reproducible
-builds) and `CONTENT_DIR`. The pipeline clones the engine into `.engine/`, builds with
-`-Dcontent.dir` pointing at the content repo, and publishes the result as GitLab Pages. The
-job token of the content repo has to be allowed to clone the engine (Settings > CI/CD > *Job
-token permissions* in the engine project), otherwise a deploy token is needed.
+**In CI (GitHub Actions).** Copy `content-repo.github-workflow.yml` from this repository into
+the content repo as `.github/workflows/pages.yml` and check the `env:` block – `ENGINE_REPO`
+(where this engine lives), `ENGINE_REF` (pin it to a tag for reproducible builds) and
+`CONTENT_DIR`. The workflow checks out both repositories, builds with `-Dcontent.dir` pointing
+at the content repo and `-Dsite.dir` at a folder of its own, and publishes that as GitHub
+Pages. Two things are set once in the content repo: **Settings > Pages > Source: GitHub
+Actions**, and – only if this engine repository is private – a token with read access for the
+second checkout step.
 
-Note the difference to this project’s own `.gitlab-ci.yml`: that one builds **this**
-repository – engine plus the tutorial – and publishes it as the engine’s demo site.
+Note the difference to this project’s own `.github/workflows/pages.yml`: that one builds
+**this** repository – engine plus the tutorial – and publishes it as the engine’s demo site.
+
+The two `*.gitlab-ci.yml` files do the same on a GitLab instance and are kept for projects that
+still live there.
 
 **Locally.** A small `pom.xml` in the content repo can drive the engine, so that `mvn package`
 works there as usual: an `exec` execution runs `mvn -f <engine>/pom.xml package
@@ -117,8 +121,10 @@ assets/                      generic UI files (CSS, JS, UI icons)
 src/main/java/de/hshn/lectures/build/   the build tools (see below)
 jbake.properties             JBake configuration
 pom.xml                      Maven build
-.gitlab-ci.yml               pipeline of THIS repo (engine + tutorial → Pages)
-content-repo.gitlab-ci.yml   template for a content repo (copy it there as .gitlab-ci.yml)
+.github/workflows/pages.yml  pipeline of THIS repo (engine + tutorial → GitHub Pages)
+content-repo.github-workflow.yml   template for a content repo (copy it there as
+                             .github/workflows/pages.yml)
+.gitlab-ci.yml, content-repo.gitlab-ci.yml    the same two for a GitLab instance
 target/website/              generated website (build output)
 ```
 

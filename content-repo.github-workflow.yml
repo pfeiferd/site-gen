@@ -1,0 +1,89 @@
+# =============================================================================
+#  GitHub Actions  —  fuer ein INHALTS-Repository
+#  (in jenem Repo ablegen als .github/workflows/pages.yml)
+#
+#  Dieses Repo enthaelt NUR den Inhalt (den Ordner `content/`). Die Engine -
+#  pom.xml, src/, templates/, assets/, jbake.properties - liegt im Repository
+#  `site-gen`. Der Lauf checkt beide aus, baut mit dem Pom der Engine, aber mit
+#  dem content/ dieses Repos, und veroeffentlicht das Ergebnis als GitHub Pages.
+#  An keinem der beiden Repos ist dafuer eine Code-Aenderung noetig.
+#
+#  Einmalig einzustellen:
+#   * Settings > Pages > "Build and deployment" > Source: GitHub Actions
+#   * Ist site-gen PRIVAT, braucht der checkout-Schritt einen Token mit
+#     Leserecht (Feineinstellung: "Contents: read"), als Secret hinterlegt und
+#     unten bei `token:` eingetragen. Bei einem oeffentlichen site-gen entfaellt
+#     das.
+# =============================================================================
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Repository der Engine und der Stand, mit dem gebaut wird. Fuer
+  # reproduzierbare Builds statt "main" ein Tag eintragen.
+  ENGINE_REPO: pfeiferd/site-gen
+  ENGINE_REF: main
+  # Inhaltsordner dieses Repos: das Verzeichnis mit index.md, meta.properties,
+  # de/, images/ ...  Liegt der Inhalt in der Wurzel, hier "." eintragen.
+  CONTENT_DIR: content
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inhalt auschecken
+        uses: actions/checkout@v4
+
+      - name: Engine auschecken
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.ENGINE_REPO }}
+          ref: ${{ env.ENGINE_REF }}
+          path: .engine
+          # token: ${{ secrets.ENGINE_TOKEN }}   # nur noetig, wenn site-gen privat ist
+
+      - name: Java einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # PlantUML rendert mit Smetana und braucht fontconfig samt einer Schrift.
+      - name: Schriften fuer PlantUML
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fontconfig fonts-dejavu-core
+
+      # Engine aus .engine/, Inhalt aus diesem Repo, fertige Site nach site/.
+      - name: Site bauen
+        run: >
+          mvn -B --no-transfer-progress -f .engine/pom.xml clean package
+          -Dcontent.dir="$GITHUB_WORKSPACE/${{ env.CONTENT_DIR }}"
+          -Dsite.dir="$GITHUB_WORKSPACE/site"
+
+      - name: Ergebnis als Pages-Artefakt ablegen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
