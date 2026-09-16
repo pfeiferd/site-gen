@@ -1,0 +1,59 @@
+# Baut diese Site (Engine + Tutorial-Inhalt) und veroeffentlicht sie als
+# GitHub Pages. Damit der Lauf deployen darf, muss im Repository einmalig
+# Settings > Pages > "Build and deployment" > Source auf "GitHub Actions"
+# stehen - ohne das schlaegt der deploy-Schritt fehl.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  # Erlaubt einen Lauf von Hand, z. B. nach einer Aenderung an den Einstellungen.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nicht zwei Veroeffentlichungen gleichzeitig; laufende Deployments werden
+# bewusst zu Ende gefuehrt (cancel-in-progress: false).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Java einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # PlantUML rendert mit Smetana, braucht dafuer aber fontconfig und eine
+      # Schrift. Auf dem Runner ist beides ueblicherweise vorhanden; der Schritt
+      # ist die Absicherung, falls das Image sich aendert.
+      - name: Schriften fuer PlantUML
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fontconfig fonts-dejavu-core
+
+      - name: Site bauen
+        run: mvn -B --no-transfer-progress clean package
+
+      - name: Ergebnis als Pages-Artefakt ablegen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/website
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
