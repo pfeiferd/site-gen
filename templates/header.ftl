@@ -94,6 +94,19 @@
             <#if pg.uri == mirror><#return mirror /></#if>
         </#list>
     </#if>
+    <#-- Zweiter Versuch: dieselbe Seite unter anderem Dateinamen. Die
+         Sprachfassungen duerfen eigene, uebersetzte Dateinamen tragen
+         ("en/about-us.md" neben "de/ueber-uns.md"); zugeordnet werden sie dann
+         ueber navorder. Das ist ohnehin je Seite vergeben, steuert die
+         Reihenfolge im Menue und ist damit der natuerliche Schluessel - eine
+         zusaetzliche Angabe im Frontmatter braucht es nicht. -->
+    <#list published_pages as pg>
+        <#if (pg.navgroup!"") == "docs" && (pg.lecture!"") == curLecture
+             && (pg.lang!"de") == lang
+             && (pg.navorder!"99")?number == (content.navorder!"99")?number>
+            <#return pg.uri />
+        </#if>
+    </#list>
     <#assign e = lectureEntry(curLecture, lang) />
     <#return e?has_content?then(e, content.uri!"") />
 </#function>

@@ -223,7 +223,14 @@ During the build, a page's front matter results from the cascade (increasing pre
 4. the `.md`'s own front matter (wins)
 
 The **language** is derived from the folder name (`de`/`en`) and does not need to be
-maintained. A topic page therefore only needs `title` and `navorder` in its front matter.
+maintained.
+
+**Translated file names** are allowed: the language switch first looks for the mirror page
+under the same name (`de/page.md` → `en/page.md`) and, failing that, for the page of the
+target language with the same `navorder`. So `en/about-us.md` is found as the counterpart of
+`de/ueber-uns.md` without any extra front matter – `navorder` is unique per page anyway and
+already orders the menu. A page with no counterpart falls back to that language's entry page.
+`index.md` should keep its name in every language, since it is the entry page. A topic page therefore only needs `title` and `navorder` in its front matter.
 
 #### One lecture without a lecture folder
 
