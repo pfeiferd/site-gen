@@ -121,7 +121,26 @@ You write it as a code block with the language `gallery` – one image per line,
 followed by `|` and the caption (which may be left out). The file names follow the
 same rule as everywhere else, an `images/` prefix is not needed.
 
+If a tile carries several details – name, role, place – separate the lines of the
+caption with a semicolon (the same notation as in a `map` block):
+
+```gallery
+beispiel.svg | **An example image**; second line; third line
+```
+
+Text wrapped in `**...**` is set in bold – handy for lifting a name out of a tile
+that also carries a role or a place.
+
+If there is **no image** for an entry, leave the file name out and start the line with
+`|` – the tile then carries the caption alone:
+
+```gallery
+| No picture available yet; second line
+```
+
+An empty box in the same format takes the image's place so the grid stays aligned.
+
 The size of the tiles is set by two optional lines inside the block: `width: 220`
-sets the width in pixels (default 150), `ratio: 16/9` the aspect ratio (default
+sets the width in pixels (default 200), `ratio: 16/9` the aspect ratio (default
 4/3). The image is **fitted** into the tile and never cropped – so portrait and
 landscape images still stand side by side at the same height.

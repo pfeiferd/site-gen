@@ -122,7 +122,28 @@ dahinter nach einem `|` die Bildunterschrift (die auch weggelassen werden kann).
 Die Bildnamen folgen derselben Regel wie sonst auch, ein `images/`-Präfix ist
 nicht nötig.
 
+Trägt eine Kachel mehrere Angaben – Name, Funktion, Ort –, trennst Du die Zeilen
+der Bildunterschrift mit einem Semikolon (dieselbe Schreibweise wie im
+`map`-Block):
+
+```gallery
+beispiel.svg | **Ein Beispielbild**; zweite Zeile; dritte Zeile
+```
+
+Mit `**...**` ausgezeichneter Text wird dabei fett – praktisch, um in einer Kachel
+mit mehreren Angaben den Namen hervorzuheben.
+
+Liegt zu einem Eintrag **kein Bild** vor, lässt Du den Dateinamen weg und beginnst
+die Zeile mit `|` – dann entsteht eine Kachel, die nur die Unterschrift trägt:
+
+```gallery
+| Noch kein Bild vorhanden; zweite Zeile
+```
+
+An der Stelle des Bildes steht eine leere Fläche im selben Format, damit das Raster
+nicht verrutscht.
+
 Die Größe der Kacheln stellst Du mit zwei optionalen Zeilen im Block ein:
-`width: 220` setzt die Breite in Pixeln (Vorgabe 150), `ratio: 16/9` das
+`width: 220` setzt die Breite in Pixeln (Vorgabe 200), `ratio: 16/9` das
 Seitenverhältnis (Vorgabe 4/3). Das Bild wird in die Kachel **eingepasst**, nie
 angeschnitten – so stehen auch Hoch- und Querformate nebeneinander gleich hoch.

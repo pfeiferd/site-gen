@@ -135,12 +135,39 @@
                         <#else>
                             <#assign gSrc = line?contains("|")?then(line?keep_before("|")?trim, line)>
                             <#assign gCap = line?contains("|")?then(line?keep_after("|")?trim, "")>
+                            <#-- Mehrzeilige Bildunterschrift: ";" trennt die Zeilen - dieselbe
+                                 Schreibweise wie im ```map-Block. Gedacht fuer Kacheln, die
+                                 mehrere Angaben tragen (Name, Funktion, Ort ...). Der
+                                 Alternativtext bleibt einzeilig, dort trennt ein Komma. -->
+                            <#assign gCapHtml = gCap?replace("\\s*;\\s*", "<br>", "r")>
+                            <#assign gCapAlt = gCap?replace("\\s*;\\s*", ", ", "r")>
+                            <#-- "**...**" in der Unterschrift wird fett - etwa um in einer
+                                 Kachel mit mehreren Angaben den Namen hervorzuheben. Der Block
+                                 ist ein Codeblock, Markdown formatiert darin nicht; deshalb
+                                 wertet das Template die Auszeichnung hier selbst aus. Aus dem
+                                 Alternativtext fallen die Sternchen ersatzlos weg. -->
+                            <#list gCap?matches("\\*\\*(.+?)\\*\\*") as bm>
+                                <#assign gCapHtml = gCapHtml?replace(bm?groups[0],
+                                        "<strong>" + bm?groups[1] + "</strong>")>
+                                <#assign gCapAlt = gCapAlt?replace(bm?groups[0], bm?groups[1])>
+                            </#list>
                             <#if gSrc?has_content>
                                 <#assign figures = figures
                                     + '<figure><img class="gallery-img" loading="lazy" src="' + gSrc
-                                    + '" alt="' + gCap?replace('"', '&quot;') + '">'
-                                    + gCap?has_content?then("<figcaption>" + gCap + "</figcaption>", "")
+                                    + '" alt="' + gCapAlt?replace('"', '&quot;') + '">'
+                                    + gCap?has_content?then("<figcaption>" + gCapHtml + "</figcaption>", "")
                                     + '</figure>'>
+                            <#elseif gCap?has_content>
+                                <#-- Textkachel: die Zeile beginnt mit "|", nennt also kein
+                                     Bild. Fuer Eintraege, zu denen (noch) kein Foto vorliegt -
+                                     ein unbesetzter Posten, ein Preistraeger ohne Aufnahme.
+                                     Statt des Bildes steht eine leere Flaeche im Format der
+                                     uebrigen Kacheln, damit das Raster und die Unterschriften
+                                     auf einer Linie bleiben. -->
+                                <#assign figures = figures
+                                    + '<figure class="gallery-text">'
+                                    + '<div class="gallery-noimg" aria-hidden="true"></div>'
+                                    + '<figcaption>' + gCapHtml + '</figcaption></figure>'>
                             </#if>
                         </#if>
                     </#if>
@@ -215,6 +242,22 @@
             <#if content.rootpath?has_content>
                 <#assign body = body?replace(' href="files/', ' href="' + content.rootpath + 'files/')>
             </#if>
+            <#-- Querverweise auf andere Seiten duerfen im Markdown auf die QUELLE
+                 zeigen: "[Spenden](spenden.md)" statt "spenden.html". Das ist im
+                 Editor und in jeder Markdown-Vorschau ein funktionierender Link,
+                 gebaut wird daraus die erzeugte Seite. Ein Anker dahinter bleibt
+                 erhalten ("seite.md#abschnitt").
+                 Unangetastet bleibt alles, was keine Seite dieser Site ist: absolute
+                 URLs und mailto: (erkennbar am Doppelpunkt), reine Anker und die
+                 Dateien unter files/ (.pdf & Co. heissen ohnehin nicht .md). -->
+            <#list body?matches(' href="([^":#]*)\\.md(#[^"]*)?"') as lm>
+                <#-- Der Anker ist optional; ohne ihn liefert ?groups nichts (nicht "").
+                     Der Standardwert steht bewusst in einer eigenen Zuweisung: in einer
+                     Verkettung zieht "!" alles Folgende in den Standardwert hinein. -->
+                <#assign lFrag = (lm?groups[2])!"">
+                <#assign body = body?replace(lm?groups[0],
+                        ' href="' + lm?groups[1] + '.html' + lFrag + '"')>
+            </#list>
             <#-- [LECTURES]-Marker durch die automatisch erzeugte Vorlesungsliste ersetzen. -->
             <#if body?contains("<p>[LECTURES]</p>")>
                 <#assign cards = "<div class=\"lecture-cards\">">
@@ -258,8 +301,13 @@
                     <#assign body = body?replace("<p>[TOC]</p>", "")>
                 </#if>
             </#if>
-            <#-- Abschnittsueberschriften automatisch durchnummerieren (nur Vorlesungsseiten). -->
-            <#if (content.navgroup!"") == "docs">
+            <#-- Abschnittsueberschriften automatisch durchnummerieren (nur Vorlesungsseiten).
+                 Mit "headingNumbers=false" laesst sich die Gliederung abschalten - im
+                 Frontmatter einer einzelnen Seite oder, fuer einen ganzen Ordner bzw.
+                 die ganze Site, in der zugehoerigen meta.properties. Gedacht fuer
+                 Seiten, die keine Gliederung SIND, sondern eine Liste - etwa eine
+                 Nachrichtenseite, deren Abschnitte Meldungen sind. -->
+            <#if (content.navgroup!"") == "docs" && (content.headingNumbers!"true") != "false">
                 <#assign allH = []>
                 <#list body?matches("<h([123])><a href=\"#[^\"]*\" id=\"([^\"]+)\"></a>(.*?)</h\\1>") as m>
                     <#assign allH = allH + [{"full": m?groups[0], "level": m?groups[1]?number, "id": m?groups[2], "text": m?groups[3]}]>

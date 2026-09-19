@@ -328,6 +328,41 @@ Notes:
 - The night-mode button, the language switch, the search field and the sidebar toggle are not
   affected; they stay available.
 
+### Internal links (`.md` → `.html`)
+
+A cross-reference to another page may point at the **source** file:
+
+```markdown
+See the [donations page](spenden.md) and [this section](ueber-uns.md#mitgliedschaft).
+```
+
+`page.ftl` turns a relative `.md` target into the generated `.html` at build time, keeping
+any fragment. Writing the source name means the link also works where the Markdown itself is
+read – in an editor, in a diff, in a repository's file view – while the built site is
+unchanged. Plain `.html` targets keep working, so this is optional.
+
+Left untouched: anything carrying a scheme (`https:`, `mailto:`), bare fragments (`#top`) and
+downloads under `files/` (which are not `.md` anyway).
+
+### Section numbering (`headingNumbers`)
+
+On content pages (`navgroup=docs`) the headings are numbered automatically – `1`, `1.1`,
+`1.1.1` – by `page.ftl`. The page's **first** heading is left out (that is the page title),
+and the levels are counted relative to the highest level that actually occurs, so a page
+starting at `##` still begins at `1`. The `[TOC]` lists the plain heading text without the
+numbers.
+
+Numbering suits a page that *is* an outline. A page that is a **list** – a news page whose
+sections are individual items, say – reads badly as `1.1 03.08.2026: …`. Switch it off with
+
+```
+headingNumbers=false
+```
+
+in the page's front matter, or in a `meta.properties` for a whole folder or the whole site.
+It follows the [usual cascade](#lectures-and-the-metaproperties-cascade), so a single page can
+opt out of a site-wide setting and vice versa.
+
 ### Internationalization (i18n)
 
 The interface can be switched independently of the content language (DE/EN, top right).
@@ -442,10 +477,21 @@ detail.png
 
 - **One image per line**; everything after the `|` becomes the caption. Leave the `|` out and
   the image gets no caption.
+- **Emphasis:** `**…**` inside a caption becomes bold. Markdown does not format inside a
+  fenced block, so the template evaluates this one marker itself – enough to lift a name out
+  of a card that also carries a role, a work or a place. The `alt` text drops the asterisks.
+- **Tiles without a photo:** a line that starts with `|` names no image and becomes a
+  text tile – for an entry that has no picture (yet), such as a vacant post or an award
+  winner without a photograph. An empty box in the tile format takes the image's place,
+  so the grid and the captions stay aligned; its dashed outline marks the gap as
+  deliberate rather than as an image that failed to load.
+- **Multi-line captions:** a `;` inside the caption becomes a line break – the same notation
+  the `map` block uses for its popups. That is what turns a gallery into a set of cards
+  (`portrait.jpg | Name; Role; Place; e-mail`). The `alt` text stays on one line, with commas.
 - File names go through the **same cascade** as every other image – an `images/` prefix is not
   needed, and a language-specific file silently replaces the shared one.
 - **Size:** an optional `width: <pixels>` line sets the thumbnail width for that gallery
-  (default 150), and `ratio: <w/h>` the tile’s aspect ratio (default `4/3`; `16:9` and `16/9`
+  (default 200), and `ratio: <w/h>` the tile’s aspect ratio (default `4/3`; `16:9` and `16/9`
   are both accepted, as is a plain number such as `1`). Values that are not well formed are
   ignored, so a typo falls back to the defaults instead of producing broken CSS. The defaults
   themselves live in `style.css` as `--gallery-width` and `--gallery-ratio`.

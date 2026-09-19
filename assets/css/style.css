@@ -755,7 +755,9 @@ html[data-theme="dark"] .map .leaflet-tile-pane {
    sich; die Breite steuert --gallery-width (je Galerie per style-Attribut
    ueberschreibbar). Geklickt wird wie bei jedem Inhaltsbild -> Lightbox. */
 .gallery {
-    --gallery-width: 150px;
+    /* Kachelbreite: gross genug, dass Gesichter und Beschriftungen auf einem
+       Foto erkennbar bleiben. Je Galerie mit "width:" im Block anpassbar. */
+    --gallery-width: 200px;
     /* Einheitliches Kachelformat: Bilder unterschiedlicher Seitenverhaeltnisse
        stehen sonst verschieden hoch und die Bildunterschriften verspringen. */
     --gallery-ratio: 4 / 3;
@@ -791,15 +793,31 @@ html[data-theme="dark"] .map .leaflet-tile-pane {
     transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
 
+/* Kachel ohne Foto (Galeriezeile, die mit "|" beginnt): an der Stelle des
+   Bildes steht eine leere Flaeche im selben Format. Sie haelt das Raster und
+   haelt die Unterschriften auf einer Linie mit denen der Bildkacheln.
+   Gestrichelt, damit die Luecke als bewusste Luecke lesbar ist und nicht wie
+   ein Bild wirkt, das nicht geladen hat. */
+.gallery .gallery-noimg {
+    width: 100%;
+    aspect-ratio: var(--gallery-ratio);
+    box-sizing: border-box;
+    border: 1px dashed var(--color-border);
+    border-radius: 4px;
+}
+
 .gallery img:hover {
     border-color: var(--color-primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     transform: translateY(-2px);
 }
 
+/* Bildunterschrift: knapp unter der Fliesstextgroesse (15px) - kleiner als der
+   Text, aber ohne dass man sie suchen muss. Mehrzeilige Unterschriften (";" im
+   Galerie-Block) brauchen etwas mehr Zeilenabstand. */
 .gallery figcaption {
-    font-size: 0.78rem;
-    line-height: 1.25;
+    font-size: 0.88rem;
+    line-height: 1.35;
     text-align: center;
     color: var(--color-text);
 }
