@@ -598,6 +598,32 @@ a:hover {
     height: auto;
 }
 
+/* Steht ein Bild allein in einem Absatz, ist es ein Inhaltsbild und wird
+   zentriert; page.ftl vergibt die Klasse dafuer. Zentriert wird ueber
+   text-align, nicht ueber "display:block; margin:auto" - so wirkt die Regel
+   auch auf ein verlinktes Bild (<a><img></a>) und aendert sonst nichts am
+   Bild selbst (Rahmen/Abstaende bleiben wie gehabt).
+   Bilder MIT Text im selben Absatz behalten ihren Platz im Textfluss. */
+.page-article-body p.img-only {
+    text-align: center;
+}
+
+/* Abweichende Ausrichtung je Bild: ![Alt](bild.png "Titel|left") - page.ftl
+   holt die Angabe aus dem Titel und setzt sie hier als Klasse am Absatz.
+   Die Klassen stehen NACH der Vorgabe und sind um eine Klasse spezifischer,
+   gewinnen also gegen die Zentrierung oben. */
+.page-article-body p.img-only.align-left {
+    text-align: left;
+}
+
+.page-article-body p.img-only.align-center {
+    text-align: center;
+}
+
+.page-article-body p.img-only.align-right {
+    text-align: right;
+}
+
 /* Karte (```map im Markdown, Aufbau siehe page.ftl; Leaflet).
    Die Hoehe setzt das Template je Karte als style-Attribut; hier steht nur,
    wie sie sich in den Textfluss einfuegt. */

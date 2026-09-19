@@ -26,7 +26,46 @@ Ergebnis:
 
 <div class="nextpage"></div>
 
-## Größe und Ausrichtung
+## Ausrichtung
+
+Steht ein Bild **allein in einem Absatz**, ist es ein Inhaltsbild und wird
+automatisch zentriert – so wie das Beispiel oben. Steht dagegen Text im selben
+Absatz oder in derselben Listenzeile (etwa ein Flaggen-Symbol vor einem Link),
+bleibt das Bild im Textfluss stehen.
+
+Willst Du ein einzelnes Bild anders ausrichten, hängst Du an seinen **Titel** ein
+`|left`, `|center` oder `|right` an:
+
+```
+![Ein Beispielbild](beispiel.svg "Ein Beispielbild|left")
+```
+
+Ergebnis:
+
+![Ein Beispielbild](beispiel.svg "Ein Beispielbild|left")
+
+Der Titel ist in Markdown die einzige Stelle, an der sich ohne rohes HTML etwas
+mitgeben lässt. Die Angabe wird beim Bauen wieder aus dem Titel entfernt, landet
+also nicht im Tooltip. Brauchst Du gar keinen Titel, schreibst Du nur den Marker:
+
+```
+![Ein Beispielbild](beispiel.svg "|right")
+```
+
+Ergebnis:
+
+![Ein Beispielbild](beispiel.svg "|right")
+
+Das funktioniert auch bei einem **verlinkten** Bild:
+`[![Alt](beispiel.svg "|right")](datei.pdf)`.
+
+Weil ausgerichtet wird, was allein im Absatz steht, hat der Marker bei einem Bild
+*mitten im Text* keine Wirkung – dort wird er nur stillschweigend entfernt.
+
+
+<div class="nextpage"></div>
+
+## Größe
 
 Für etwas mehr Kontrolle – etwa eine feste Breite – kannst Du auch reines HTML mit der Klasse `content-img` verwenden:
 

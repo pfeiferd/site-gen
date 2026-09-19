@@ -397,6 +397,33 @@ In addition, `content/images/` is copied verbatim into the output root
 **logo** (`hhn-logo.png`, `hhn-logo-en.png`) and the **favicon** live – deliberately under
 `content/`, not under `assets/`.
 
+#### Alignment
+
+An image that stands **alone in a paragraph** is a content image and is centred
+automatically – `page.ftl` gives that paragraph the class `img-only`. An image that shares
+its paragraph or list item with text (a flag icon in front of a link, say) stays in the text
+flow and is left untouched, because centring would tear such a line apart.
+
+To align a single image differently, end its **title** with `|left`, `|center` or `|right`:
+
+```markdown
+![A tick](zecke.png "A tick|left")
+![A tick](zecke.png "|right")
+```
+
+The marker is removed from the title during the build (it must not end up in the tooltip);
+if nothing is left of the title, the `title` attribute is dropped altogether. The image gets
+the class `img-align-<pos>` and its paragraph `align-<pos>`, which the stylesheet turns into
+`text-align`. Aligning the *paragraph* rather than the image means it also works for a linked
+image (`[![alt](pic.png "|right")](file.pdf)`).
+
+Because the marker is only evaluated for a standalone image, it has no effect on an image
+inside a line of text – there it is merely stripped from the title.
+
+Sites can override all of this without touching the engine: `content/style.css` is loaded
+after the engine stylesheet, so a rule such as `.page-article-body p.img-only { text-align:
+left; }` switches the default off site-wide.
+
 #### Image gallery (`gallery` blocks)
 
 Several images – screenshots, for instance – can be shown as a grid of thumbnails with

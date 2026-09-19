@@ -26,7 +26,46 @@ Result:
 
 <div class="nextpage"></div>
 
-## Size and alignment
+## Alignment
+
+An image that stands **alone in a paragraph** is a content image and is centred
+automatically – like the example above. If there is text in the same paragraph or
+list item (a flag icon in front of a link, say), the image stays in the text flow.
+
+To align a single image differently, append `|left`, `|center` or `|right` to its
+**title**:
+
+```
+![An example image](beispiel.svg "An example image|left")
+```
+
+Result:
+
+![An example image](beispiel.svg "An example image|left")
+
+In Markdown the title is the only place where something can be passed along
+without resorting to raw HTML. The marker is removed from the title during the
+build, so it never shows up in the tooltip. If you do not need a title at all,
+write just the marker:
+
+```
+![An example image](beispiel.svg "|right")
+```
+
+Result:
+
+![An example image](beispiel.svg "|right")
+
+This works for a **linked** image as well:
+`[![alt](beispiel.svg "|right")](file.pdf)`.
+
+Since it is the standalone paragraph that gets aligned, the marker has no effect
+on an image *inside* a line of text – there it is simply stripped.
+
+
+<div class="nextpage"></div>
+
+## Size
 
 For a little more control – a fixed width, say – you can also use plain HTML with the class `content-img`:
 

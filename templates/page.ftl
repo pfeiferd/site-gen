@@ -169,6 +169,46 @@
                     <#assign body = body?replace(im?groups[0], im?groups[0]?replace('src="' + isrc + '"', 'src="images/' + isrc + '"')) />
                 </#if>
             </#list>
+            <#-- Ausrichtung je Bild: der Bildtitel darf mit "|left", "|center" oder
+                 "|right" enden - ![Alt](bild.png "Titel|left"). Markdown kennt keine
+                 Attribute, der Titel ist die einzige Stelle, an der ohne rohes HTML
+                 etwas mitgegeben werden kann. Die Angabe wird hier aus dem Titel
+                 entfernt (sonst stuende sie im Tooltip) und als Klasse ans Bild
+                 geschrieben; bleibt vom Titel nichts uebrig ("|left" allein), faellt
+                 das title-Attribut ganz weg. Ausgewertet wird die Klasse im naechsten
+                 Schritt - sie wirkt also nur bei einem allein stehenden Bild. -->
+            <#list body?matches('<img[^>]*\\stitle="([^"]*)\\|(left|center|right)"[^>]*>') as am>
+                <#assign aText = am?groups[1]>
+                <#assign aPos = am?groups[2]>
+                <#assign aTag = am?groups[0]?replace(
+                        ' title="' + aText + '|' + aPos + '"',
+                        aText?has_content?then(' title="' + aText + '"', ''))>
+                <#assign aTag = aTag?contains(' class="')
+                        ?then(aTag?replace(' class="', ' class="img-align-' + aPos + ' '),
+                              aTag?replace('<img', '<img class="img-align-' + aPos + '"'))>
+                <#assign body = body?replace(am?groups[0], aTag)>
+            </#list>
+            <#-- Bilder, die allein in einem Absatz stehen, sind Inhaltsbilder und
+                 gehoeren mittig - Markdown kennt dafuer keine Schreibweise, also
+                 entscheidet der Aufbau: ein Absatz, dessen einziger Inhalt ein Bild
+                 ist (ggf. in Link/Fett/Kursiv gehuellt), bekommt die Klasse
+                 "img-only", die das Stylesheet zentriert.
+                 Traegt das Bild eine Ausrichtung aus dem Titel (siehe oben), kommt
+                 sie als "align-..." dazu und schlaegt die Zentrierung.
+                 Ausgerichtet wird immer der ABSATZ, nicht das Bild: so wirkt es auch
+                 auf ein verlinktes Bild (<a><img></a>).
+                 NICHT betroffen sind Bilder MIT Text im selben Absatz oder in einer
+                 Listenzeile (z. B. Flaggen-Icons vor einem Link) - die bleiben im
+                 Textfluss, wo Zentrieren das Layout zerreissen wuerde. -->
+            <#list body?matches('<p>\\s*((?:<a\\b[^>]*>|<strong>|<em>)*)\\s*(<img\\b[^>]*>)\\s*((?:</a>|</strong>|</em>)*)\\s*</p>', "s") as sp>
+                <#assign pCls = "img-only">
+                <#list ["left", "center", "right"] as pos>
+                    <#if sp?groups[2]?contains('img-align-' + pos)>
+                        <#assign pCls = pCls + " align-" + pos>
+                    </#if>
+                </#list>
+                <#assign body = body?replace(sp?groups[0], '<p class="' + pCls + '">' + sp?groups[0]?substring(3))>
+            </#list>
             <#-- Downloads: "[Flyer](files/flyer.pdf)" meint content/files/flyer.pdf.
                  Der Ordner liegt in der Site-Wurzel, die Seite aber in <lang>/ -
                  deshalb den Weg zurueck zur Wurzel voranstellen. -->
