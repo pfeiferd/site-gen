@@ -829,6 +829,12 @@ html[data-theme="dark"] .map .leaflet-tile-pane {
     cursor: zoom-in;
 }
 
+/* Ein Bild in einem Bedienelement ist Teil des Knopfes, nicht des Inhalts -
+   es oeffnet keine Vollansicht (siehe footer.ftl) und zeigt das auch. */
+.page-article-body button img {
+    cursor: inherit;
+}
+
 /* Vollbild-Lightbox: verdeckt die Seite und zeigt das Bild so gross wie
    moeglich. Klick irgendwo (oder Esc) schliesst sie wieder. */
 .img-lightbox {

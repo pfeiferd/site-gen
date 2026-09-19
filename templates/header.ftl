@@ -180,9 +180,11 @@
     <title><#if (content.title)??>${content.title}<#if (titleTail?size > 0)> – </#if></#if>${titleTail?join(" · ")}</title>
     <link rel="icon" type="image/x-icon" href="${content.rootpath}images/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="${content.rootpath}images/favicon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap">
+    <#-- Rubik wird LOKAL ausgeliefert (assets/fonts, Regeln in css/fonts.css).
+         Ein <link> auf fonts.googleapis.com wuerde bei jedem Seitenaufruf die
+         IP-Adresse der Besucher an Google uebertragen - in Deutschland ein
+         bekanntes Abmahnrisiko. So kommt die Site ohne Drittanbieter aus. -->
+    <link rel="stylesheet" href="${content.rootpath}css/fonts.css?v=${.now?long?c}">
     <link rel="stylesheet" href="${content.rootpath}css/highlight.css?v=${.now?long?c}">
     <link rel="stylesheet" href="${content.rootpath}css/leaflet.css?v=${.now?long?c}">
     <link rel="stylesheet" href="${content.rootpath}css/style.css?v=${.now?long?c}">

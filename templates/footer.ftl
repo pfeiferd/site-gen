@@ -43,7 +43,13 @@
 <script>
 (function () {
     var imgs = [].slice.call(document.querySelectorAll('.page-article-body img'))
-        .filter(function (img) { return !img.classList.contains('lecture-card-icon'); });
+        .filter(function (img) {
+            /* Icons (Vorlesungskacheln) und Bilder, die Teil eines Bedienelements
+               sind (z. B. ein Logo im Absendeknopf eines Formulars), sind keine
+               Inhaltsbilder - dort wuerde die Vollansicht die Bedienung stoeren. */
+            return !img.classList.contains('lecture-card-icon')
+                && !(img.closest && img.closest('button'));
+        });
     if (!imgs.length) return;
 
     var overlay = document.createElement('div');

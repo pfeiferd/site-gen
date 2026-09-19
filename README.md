@@ -503,6 +503,23 @@ detail.png
   no second, full-resolution copy of the file to maintain – but the thumbnail *is* the original
   scaled down by the browser, so very large images are worth shrinking before adding them.
 
+### Fonts (self-hosted)
+
+The body font **Rubik** is served from the site itself, not from Google. `assets/fonts/`
+holds one variable `woff2` per subset (`latin`, `latin-ext` – enough for German, English,
+Polish, Czech and Romanian), `assets/css/fonts.css` declares them with a `300 700` weight
+range, and `header.ftl` links that stylesheet. Rubik is licensed under the SIL Open Font
+License 1.1 (`assets/fonts/OFL.txt`), which explicitly permits self-hosting.
+
+This is deliberate: a `<link>` to `fonts.googleapis.com` sends every visitor's IP address to
+Google on every page view, which German courts have found to breach the GDPR (LG München I,
+3 O 17493/20). A built site therefore loads **no third-party resources at all** – worth
+keeping that way, and worth checking after adding embeds.
+
+To change the font, fetch the Google Fonts CSS for it, keep one `@font-face` per subset
+(Google repeats the same variable file for each weight), point `src` at `../fonts/<file>`
+and update `--font-main` in `style.css`.
+
 ### Site-specific styles (`content/style.css`)
 
 `assets/css/style.css` belongs to the engine and is shared by every site built with it. A site
