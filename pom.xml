@@ -116,6 +116,7 @@
                                 <argument>${content.dir}</argument>
                                 <argument>${project.build.directory}</argument>
                                 <argument>${site.dir}</argument>
+                                <argument>${project.basedir}</argument>
                             </arguments>
                         </configuration>
                     </execution>

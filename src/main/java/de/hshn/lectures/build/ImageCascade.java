@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * the cascade then works the same way, one directory level up, and materialises
  * into {@code <output>/<lang>/images/}.</p>
  *
- * <p>An optional {@code content/style.css} is published as
+ * <p>An optional {@code content/style.css} is published, comments stripped, as
  * {@code <output>/css/site.css} – the site's own layer on top of the engine's
  * stylesheet, for wording-independent tweaks (logo size, colours). The file is
  * always written, empty if the content does not bring one, so the templates can
@@ -113,7 +113,10 @@ public final class ImageCascade {
         Files.createDirectories(siteCss.getParent());
         Path ownCss = contentDir.resolve("style.css");
         if (Files.isRegularFile(ownCss)) {
-            Files.copy(ownCss, siteCss, StandardCopyOption.REPLACE_EXISTING);
+            // Ohne Quellkommentare - sie gehen bei jedem Seitenaufruf mit ueber die
+            // Leitung. Die Quelle im Inhalts-Repository behaelt sie (siehe AssetStrip).
+            Files.writeString(siteCss, AssetStrip.stripStylesheet(TextIO.read(ownCss)),
+                    java.nio.charset.StandardCharsets.UTF_8);
             copied++;
         } else {
             Files.writeString(siteCss, "/* Diese Site bringt keine eigene style.css mit. */\n");

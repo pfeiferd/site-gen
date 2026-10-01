@@ -151,11 +151,12 @@ so these files survive the bake.
 
 | Tool | Purpose |
 |------|---------|
-| `PlantumlPreprocessor` | Entry point; renders `` ```plantuml `` blocks and `*.puml` files to SVGs under `target/website/images/plantuml/` using the Graphviz-free **Smetana** layout. Unchanged diagrams are skipped via SHA-256. Then invokes `MetaMerge`, `ImageCascade` and `IndexRedirects`. |
+| `PlantumlPreprocessor` | Entry point; renders `` ```plantuml `` blocks and `*.puml` files to SVGs under `target/website/images/plantuml/` using the Graphviz-free **Smetana** layout. Unchanged diagrams are skipped via SHA-256. Then invokes `MetaMerge`, `ImageCascade`, `IndexRedirects`, `DataBundle` and `AssetStrip`. |
 | `MetaMerge` | Merges the `meta.properties` cascade into each `.md`'s front matter and writes the result to `target/staged-content/` (JBake's actual source folder). Evaluates `publish`, fills in a missing `date`, builds the i18n tables. |
 | `ImageCascade` | Materializes images according to the cascade (see below) into `target/website/`. |
 | `IndexRedirects` | Writes the `index.html` files for folder URLs – `/<lecture>/<lang>/`, `/<lecture>/`, and the site root when no start page is baked – so that they land on the lecture's entry topic instead of a "Not Found". Where one entry point serves several languages, the redirect keeps the reader's chosen language (`meta refresh` to the primary language without JavaScript). Nothing is written where the entry topic is itself called `index.md`: the real page already sits there. |
 | `DataBundle` | Publishes `content/data/*.json` as `data/*.js` (`window.MAPDATA`), so that maps and other data-driven pages work without a runtime fetch (and therefore under `file://` too). |
+| `AssetStrip` | Stages `assets/` into `target/staged-assets/` and strips the comments from the engine's own **stylesheets** on the way – JBake publishes that copy (`asset.folder` in `jbake.properties`). The sources keep their documentation; visitors download about 7 KiB less after compression. Everything else is copied byte for byte: imported libraries (Leaflet, lunr, highlight.js, MathJax) with their licence headers, our own **scripts** (telling a comment from a regular expression needs a real JavaScript scanner, and about 4 KiB compressed is not worth that), and any stylesheet not listed in `AssetStrip.OWN` – forgetting one costs bytes, never correctness. CSS is safe to scan in a few lines: a comment can only hide inside a string, and `/*!` licence headers are kept. |
 | `TextIO` | UTF-8-tolerant reading (with an ISO-8859-1 fallback), so that accented characters in configuration and content files never break the build. |
 
 ## Configuration

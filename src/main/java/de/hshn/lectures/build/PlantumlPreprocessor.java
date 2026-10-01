@@ -89,11 +89,16 @@ public final class PlantumlPreprocessor {
         Path contentDir = Path.of(args.length > 0 ? args[0] : "content");
         Path buildDir   = Path.of(args.length > 1 ? args[1] : "target");
         Path website    = args.length > 2 ? Path.of(args[2]) : buildDir.resolve("website");
+        // Verzeichnis der Engine selbst - dort liegen templates/ und assets/.
+        Path engineDir  = args.length > 3 ? Path.of(args[3]) : buildDir.getParent();
         new PlantumlPreprocessor(contentDir, website.resolve("images").resolve("plantuml")).run();
         new MetaMerge(contentDir, buildDir.resolve("staged-content")).run();
         new ImageCascade(contentDir, website).run();
         new IndexRedirects(contentDir, website).run();
         new DataBundle(contentDir, website).run();
+        // Muss vor JBake laufen: es veroeffentlicht den Zwischenstand,
+        // siehe asset.folder in jbake.properties.
+        new AssetStrip(engineDir.resolve("assets"), buildDir.resolve("staged-assets")).run();
     }
 
     /** Renders all diagrams found under {@code content/} into {@code outputDir}. */
