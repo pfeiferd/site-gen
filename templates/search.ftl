@@ -9,11 +9,11 @@
                         <input type="text"
                                id="search-input"
                                name="q"
-                               placeholder="Suchbegriff eingeben..."
+                               placeholder="${ui('search.input', 'Suchbegriff eingeben...')}"
                                data-i18n-placeholder="search.input"
                                autocomplete="off"
                                autofocus>
-                        <button type="submit" aria-label="Suchen" data-i18n-aria="search.submit">
+                        <button type="submit" aria-label="${ui('search.submit', 'Suchen')}" data-i18n-aria="search.submit">
                             <img src="${content.rootpath}images/search.svg" alt="Suchen" class="search-icon">
                         </button>
                     </div>

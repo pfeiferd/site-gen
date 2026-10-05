@@ -14,6 +14,24 @@
 <#assign curLang = content.lang!"de" />
 <#assign uiLangs = ["de", "en"] />
 
+<#-- Oberflaechentext aus dem Woerterbuch DIESER Seite (content/site_<lang>.properties
+     und <seite>_<lang>.properties, von MetaMerge in jede Seite gemerged; dieselbe
+     Tabelle, die footer.ftl als window.I18N ausgibt).
+
+     Damit steht die Beschriftung der Site schon im ausgelieferten HTML. Stuende
+     dort nur die Template-Vorgabe, saehe man beim Seitenaufbau kurz diese und
+     danach - wenn i18n.js laeuft - den Begriff der Site: ein Flackern
+     ("Unterlagen" -> "Menue"). i18n.js bleibt unangetastet, es braucht das
+     Woerterbuch weiter fuer den Sprachwechsel im Browser; die data-i18n*-
+     Markierungen bleiben deshalb ebenfalls stehen. Fehlt ein Schluessel, gilt
+     wie dort die Vorgabe aus dem Template.
+
+     Das Ergebnis ist fuer HTML maskiert - taugt also fuer Text UND Attributwerte. -->
+<#function ui key default>
+    <#local table = (curLang == "en")?then((content.i18nEn)!{}, (content.i18nDe)!{}) />
+    <#return ((table[key])!default)?html />
+</#function>
+
 <#-- Site-weite Metadaten (aus content/meta.properties, von MetaMerge in jede Seite gemerged). -->
 <#assign lecturerName    = (content.lecturerName)!"" />
 <#assign lecturerUrl     = (content.lecturerUrl)!"" />
@@ -274,8 +292,8 @@
              Kopfzeile stehen, wenn diese eingeklappt ist.
              Per showHeaderToggle=false abschaltbar. -->
         <#if showHeaderToggle>
-        <div class="header-toggle-bar" title="Kopfbereich ein- oder ausklappen" data-i18n-title="header.toggle">
-            <button type="button" class="header-toggle" aria-label="Kopfbereich ein- oder ausklappen" aria-expanded="true" data-i18n-aria="header.toggle">
+        <div class="header-toggle-bar" title="${ui('header.toggle', 'Kopfbereich ein- oder ausklappen')}" data-i18n-title="header.toggle">
+            <button type="button" class="header-toggle" aria-label="${ui('header.toggle', 'Kopfbereich ein- oder ausklappen')}" aria-expanded="true" data-i18n-aria="header.toggle">
                 <span class="header-toggle-arrow" aria-hidden="true"><svg class="header-toggle-icon header-toggle-collapse" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg><svg class="header-toggle-icon header-toggle-expand" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg></span>
             </button>
         </div>
@@ -288,32 +306,32 @@
             <ul>
                 <li>
                     <a href="${content.rootpath}index.html"
-                       <#if (content.uri!"") == "index.html">class="active"</#if>><img class="main-nav-icon" src="${content.rootpath}images/aperture.svg" alt=""><span data-i18n="nav.start">Start</span></a>
+                       <#if (content.uri!"") == "index.html">class="active"</#if>><img class="main-nav-icon" src="${content.rootpath}images/aperture.svg" alt=""><span data-i18n="nav.start">${ui('nav.start', 'Start')}</span></a>
                 </li>
             </ul>
         </nav>
         <div class="print-search-group">
             <form class="header-search" id="header-search-form" action="${content.rootpath}search.html" method="get">
                 <#if isLecture><input type="hidden" name="lecture" value="${curLecture}"></#if>
-                <input type="text" id="header-search-input" name="q" placeholder="Suchen..." aria-label="Suche" data-i18n-placeholder="search.ph" data-i18n-aria="search.aria">
-                <button type="submit" aria-label="Suchen" data-i18n-aria="search.submit">
+                <input type="text" id="header-search-input" name="q" placeholder="${ui('search.ph', 'Suchen...')}" aria-label="${ui('search.aria', 'Suche')}" data-i18n-placeholder="search.ph" data-i18n-aria="search.aria">
+                <button type="submit" aria-label="${ui('search.submit', 'Suchen')}" data-i18n-aria="search.submit">
                     <img src="${content.rootpath}images/search.svg" alt="Suchen" class="search-icon">
                 </button>
             </form>
             <#-- Umschalter Dokument/Slides; per showViewSwitch=false abschaltbar
                  (die Ansicht selbst bleibt dann bei der zuletzt gewaehlten). -->
             <#if isLecture && !documentOnly && showViewSwitch>
-            <div class="view-switch" role="group" aria-label="Ansicht umschalten" data-i18n-aria="view.group">
-                <button type="button" class="view-switch-btn" data-view="doc" aria-pressed="true" aria-label="Dokumentansicht" title="Dokument" data-i18n-aria="view.doc.aria" data-i18n-title="view.doc.title">
+            <div class="view-switch" role="group" aria-label="${ui('view.group', 'Ansicht umschalten')}" data-i18n-aria="view.group">
+                <button type="button" class="view-switch-btn" data-view="doc" aria-pressed="true" aria-label="${ui('view.doc.aria', 'Dokumentansicht')}" title="${ui('view.doc.title', 'Dokument')}" data-i18n-aria="view.doc.aria" data-i18n-title="view.doc.title">
                     <img class="view-switch-icon" src="${content.rootpath}images/book-open.svg" alt=""><span class="view-switch-label">Dokument</span>
                 </button>
-                <button type="button" class="view-switch-btn" data-view="slides" aria-pressed="false" aria-label="Foliensatz (Slides)" title="Slides" data-i18n-aria="view.slides.aria" data-i18n-title="view.slides.title">
+                <button type="button" class="view-switch-btn" data-view="slides" aria-pressed="false" aria-label="${ui('view.slides.aria', 'Foliensatz (Slides)')}" title="${ui('view.slides.title', 'Slides')}" data-i18n-aria="view.slides.aria" data-i18n-title="view.slides.title">
                     <img class="view-switch-icon" src="${content.rootpath}images/square.svg" alt=""><span class="view-switch-label">Slides</span>
                 </button>
             </div>
             </#if>
             <#assign curLangsAvail = isLecture?then(lectureLangs(curLecture), []) />
-            <div class="lang-switch" role="group" aria-label="Sprache wählen" data-i18n-aria="lang.group">
+            <div class="lang-switch" role="group" aria-label="${ui('lang.group', 'Sprache wählen')}" data-i18n-aria="lang.group">
                 <#list uiLangs as lg>
                     <#assign lgTarget = isLecture?then(langTarget(lg), (content.uri)!"") />
                     <#assign lgNav = isLecture && curLangsAvail?seq_contains(lg) && lgTarget != ((content.uri)!"") />
@@ -322,20 +340,20 @@
             </div>
             <a class="nav-print" href="#"
                onclick="window.print(); return false;"
-               aria-label="Seite drucken" title="Drucken" data-i18n-aria="print.aria" data-i18n-title="print.title">
+               aria-label="${ui('print.aria', 'Seite drucken')}" title="${ui('print.title', 'Drucken')}" data-i18n-aria="print.aria" data-i18n-title="print.title">
                 <img src="${content.rootpath}images/printer.svg" alt="" class="nav-icon"><span class="nav-label">Drucken</span>
             </a>
             <#-- Vollbild (Fullscreen-API): blendet die Browser-Oberflaeche aus
                  (Tabs, Adresszeile). Steht links neben dem Nachtmodus, damit
                  dieser ganz rechts bleibt. Per showFullscreen=false abschaltbar. -->
             <#if showFullscreen>
-            <button type="button" class="fullscreen-toggle" aria-label="Vollbild umschalten" title="Vollbild" aria-pressed="false" data-i18n-aria="fullscreen.toggle" data-i18n-title="fullscreen.toggle">
+            <button type="button" class="fullscreen-toggle" aria-label="${ui('fullscreen.toggle', 'Vollbild umschalten')}" title="${ui('fullscreen.toggle', 'Vollbild')}" aria-pressed="false" data-i18n-aria="fullscreen.toggle" data-i18n-title="fullscreen.toggle">
                 <span class="fullscreen-toggle-icons" aria-hidden="true"><svg class="fullscreen-toggle-icon fullscreen-toggle-enter" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg><svg class="fullscreen-toggle-icon fullscreen-toggle-exit" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg></span>
             </button>
             </#if>
             <#-- Nachtmodus ganz rechts. Mond = "auf dunkel umschalten",
                  Sonne = "zurueck auf hell" (Feather-Icons, wie die uebrigen). -->
-            <button type="button" class="theme-toggle" aria-label="Nachtmodus umschalten" title="Nachtmodus" aria-pressed="false" data-i18n-aria="theme.toggle" data-i18n-title="theme.toggle">
+            <button type="button" class="theme-toggle" aria-label="${ui('theme.toggle', 'Nachtmodus umschalten')}" title="${ui('theme.toggle', 'Nachtmodus')}" aria-pressed="false" data-i18n-aria="theme.toggle" data-i18n-title="theme.toggle">
                 <span class="theme-toggle-icons" aria-hidden="true"><svg class="theme-toggle-icon theme-toggle-moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="theme-toggle-icon theme-toggle-sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
             </button>
         </div>
@@ -346,18 +364,18 @@
     <#if isLecture>
     <div class="sidebar-col">
     <aside class="sidebar-nav" aria-label="Navigation">
-        <div class="nav-header" title="Navigation ein- oder ausklappen" data-i18n-title="sidebar.toggle">
-            <button type="button" class="nav-toggle" aria-label="Navigation ein- oder ausklappen" aria-expanded="true" data-i18n-aria="sidebar.toggle">
+        <div class="nav-header" title="${ui('sidebar.toggle', 'Navigation ein- oder ausklappen')}" data-i18n-title="sidebar.toggle">
+            <button type="button" class="nav-toggle" aria-label="${ui('sidebar.toggle', 'Navigation ein- oder ausklappen')}" aria-expanded="true" data-i18n-aria="sidebar.toggle">
                 <span class="nav-toggle-arrow" aria-hidden="true"><svg class="nav-toggle-icon nav-toggle-collapse" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg><svg class="nav-toggle-icon nav-toggle-expand" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></span>
             </button>
             <div class="product-label">
                 <#if curIcon?has_content><img class="product-icon" src="images/${curIcon}" alt=""></#if>
-                <span class="product-label-text" data-i18n="sidebar.lecture">Unterlagen</span>
-                <span class="product-label-vert" data-i18n="sidebar.lecture">Unterlagen</span>
+                <span class="product-label-text" data-i18n="sidebar.lecture">${ui('sidebar.lecture', 'Unterlagen')}</span>
+                <span class="product-label-vert" data-i18n="sidebar.lecture">${ui('sidebar.lecture', 'Unterlagen')}</span>
             </div>
         </div>
         <div class="nav-scroll">
-            <nav aria-label="Vorlesungsthemen" data-i18n-aria="sidebar.topics">
+            <nav aria-label="${ui('sidebar.topics', 'Vorlesungsthemen')}" data-i18n-aria="sidebar.topics">
                 <ul><@lectureNav/></ul>
             </nav>
         </div>

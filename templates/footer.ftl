@@ -33,7 +33,7 @@
              die Zeichensetzung am Ende ("... e.V.") gehoert in den Wert, nicht
              ins Template. -->
         <#assign fOrg = (content.footerOrg!"") />
-        &copy; ${(content.copyrightYear)!"2026"}. <#if fOrg?has_content><@linked url=lecturerUrl urlEn=lecturerUrlEn>${fOrg}</@linked><#else><@linked url=lecturerUrl urlEn=lecturerUrlEn>${lecturerName}</@linked> – <@linked url=facultyUrl urlEn=facultyUrlEn><span data-i18n-de="${facultyNameFlat?html}" data-i18n-en="${facultyNameEnFlat?html}">${facultyNameFlat}</span></@linked>, <@linked url=universityUrl urlEn=universityUrlEn><span data-i18n-de="${universityName?html}" data-i18n-en="${universityNameEn?html}">${universityName}</span></@linked>.</#if> <span data-i18n="footer.modified">Zuletzt geändert am</span> <span data-i18n-de="${.now?string("dd.MM.yyyy")}" data-i18n-en="${.now?string("MM/dd/yyyy")}">${.now?string("dd.MM.yyyy")}</span>.
+        &copy; ${(content.copyrightYear)!"2026"}. <#if fOrg?has_content><@linked url=lecturerUrl urlEn=lecturerUrlEn>${fOrg}</@linked><#else><@linked url=lecturerUrl urlEn=lecturerUrlEn>${lecturerName}</@linked> – <@linked url=facultyUrl urlEn=facultyUrlEn><span data-i18n-de="${facultyNameFlat?html}" data-i18n-en="${facultyNameEnFlat?html}">${facultyNameFlat}</span></@linked>, <@linked url=universityUrl urlEn=universityUrlEn><span data-i18n-de="${universityName?html}" data-i18n-en="${universityNameEn?html}">${universityName}</span></@linked>.</#if> <span data-i18n="footer.modified">${ui('footer.modified', 'Zuletzt geändert am')}</span> <span data-i18n-de="${.now?string("dd.MM.yyyy")}" data-i18n-en="${.now?string("MM/dd/yyyy")}">${.now?string("dd.MM.yyyy")}</span>.
     </div>
 </footer>
 
