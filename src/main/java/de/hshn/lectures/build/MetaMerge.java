@@ -31,6 +31,9 @@ import java.util.stream.Stream;
  *   <li>the {@code .md}'s own front matter (wins)</li>
  * </ol>
  *
+ * <p>While staging, {@link Bibliography} turns citations ({@code [@key]}) and a
+ * {@code [BIB]} line into HTML for pages that set {@code bibliography}.</p>
+ *
  * <p>Only Markdown files are staged (JBake reads only those from the content
  * folder); images and {@code meta.properties} stay in the real {@code content/}
  * tree and are handled elsewhere. Run from
@@ -45,6 +48,7 @@ public final class MetaMerge {
 
     private final Path contentDir;
     private final Path stageDir;
+    private final Bibliography bibliography;
     private int staged;
 
     /** Site-wide string tables (content/site_<lang>.properties); page tables are merged on top. */
@@ -54,6 +58,7 @@ public final class MetaMerge {
     public MetaMerge(Path contentDir, Path stageDir) {
         this.contentDir = contentDir.toAbsolutePath().normalize();
         this.stageDir = stageDir.toAbsolutePath().normalize();
+        this.bibliography = new Bibliography(this.contentDir);
     }
 
     /** Stages every Markdown file with its cascaded front matter. */
@@ -125,11 +130,14 @@ public final class MetaMerge {
             merged.put("date", fileDate(file));
         }
 
+        // Zitate [@key] und [BIB] in fertiges HTML umsetzen (siehe Bibliography).
+        String body = bibliography.process(split[1], merged, file);
+
         StringBuilder out = new StringBuilder();
         for (Map.Entry<String, String> e : merged.entrySet()) {
             out.append(e.getKey()).append('=').append(e.getValue()).append('\n');
         }
-        out.append(SEP).append('\n').append(split[1]);
+        out.append(SEP).append('\n').append(body);
 
         Path target = stageDir.resolve(contentDir.relativize(file).toString());
         Files.createDirectories(target.getParent());

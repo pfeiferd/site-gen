@@ -32,6 +32,7 @@ LaTeX formulas are typeset locally – without any external services.
   - [Site-specific styles (`content/style.css`)](#site-specific-styles-contentstylecss)
   - [Automatic values (date, copyright)](#automatic-values-date-copyright)
   - [Enabling LaTeX/formulas (`math`)](#enabling-latexformulas-math)
+  - [Bibliographies (`bibliography`, `citationStyle`)](#bibliographies-bibliography-citationstyle)
   - [Maps (`map` blocks)](#maps-map-blocks)
   - [Smooth scrolling](#smooth-scrolling)
   - [Syntax highlighting](#syntax-highlighting)
@@ -108,6 +109,7 @@ content/                     source content (Markdown, images, configuration)
   index.md, search.md        landing page (unpublished here, see below) and search
   images/                    site-wide images (logo, favicon …)
   data/                      data sets for the browser (e.g. map pins, *.json)
+  literatur.bib              BibTeX file of the tutorial's "References" page
   common/images/             images shared by all languages of the lecture
   de/  en/                   one folder per language of the lecture
     meta.properties          lectureTitle per language
@@ -126,6 +128,7 @@ assets/                      generic UI files (CSS, JS, UI icons)
   js/lunr.min.js             full-text search
   js/leaflet.js, css/leaflet.css   locally bundled Leaflet (maps)
 src/main/java/de/hshn/lectures/build/   the build tools (see below)
+src/main/resources/csl/      bundled citation styles (CSL)
 jbake.properties             JBake configuration
 pom.xml                      Maven build
 .github/workflows/pages.yml  pipeline of THIS repo (engine + tutorial → GitHub Pages)
@@ -152,7 +155,8 @@ so these files survive the bake.
 | Tool | Purpose |
 |------|---------|
 | `PlantumlPreprocessor` | Entry point; renders `` ```plantuml `` blocks and `*.puml` files to SVGs under `target/website/images/plantuml/` using the Graphviz-free **Smetana** layout. Unchanged diagrams are skipped via SHA-256. Then invokes `MetaMerge`, `ImageCascade`, `IndexRedirects`, `DataBundle` and `AssetStrip`. |
-| `MetaMerge` | Merges the `meta.properties` cascade into each `.md`'s front matter and writes the result to `target/staged-content/` (JBake's actual source folder). Evaluates `publish`, fills in a missing `date`, builds the i18n tables. |
+| `MetaMerge` | Merges the `meta.properties` cascade into each `.md`'s front matter and writes the result to `target/staged-content/` (JBake's actual source folder). Evaluates `publish`, fills in a missing `date`, builds the i18n tables, and has `Bibliography` format citations. |
+| `Bibliography` | Turns `[@key]` citations and a `[BIB]` line into HTML while a page is staged: reads the `.bib` file(s) named by `bibliography`, formats them with **citeproc-java** in the CSL style `citationStyle` and the page's language. Code blocks and inline code are left alone. |
 | `ImageCascade` | Materializes images according to the cascade (see below) into `target/website/`. |
 | `IndexRedirects` | Writes the `index.html` files for folder URLs – `/<lecture>/<lang>/`, `/<lecture>/`, and the site root when no start page is baked – so that they land on the lecture's entry topic instead of a "Not Found". Where one entry point serves several languages, the redirect keeps the reader's chosen language (`meta refresh` to the primary language without JavaScript). Nothing is written where the entry topic is itself called `index.md`: the real page already sits there. |
 | `DataBundle` | Publishes `content/data/*.json` as `data/*.js` (`window.MAPDATA`), so that maps and other data-driven pages work without a runtime fetch (and therefore under `file://` too). |
@@ -558,6 +562,37 @@ matter. It uses the **locally bundled** MathJax (`assets/js/tex-svg.js`, SVG out
 external fonts, no CDN). The delimiters are `$…$` (inline) and `$$…$$` (displayed); in addition,
 `` ```math `` code blocks are turned into displayed formulas. `$` delimiters are used on
 purpose instead of `\(…\)`, because the latter would be destroyed by the Markdown parser.
+
+### Bibliographies (`bibliography`, `citationStyle`)
+
+References are kept in BibTeX files and cited by key; the tutorial page **"References"**
+shows it live. A page (or, via `meta.properties`, a whole lecture) names its file(s):
+
+```properties
+# several files: bibliography=a.bib, b.bib
+bibliography=literatur.bib
+# optional, default ieee
+citationStyle=ieee
+```
+
+In the text, `[@key]` or `[@a; @b]` cites, and a line holding only `[BIB]` becomes the list of
+the entries **cited on that page**, in the page's language (`de` → de-DE, otherwise en-US).
+Numeric styles number the sources in order of first citation; every citation links to its
+entry. Both are rendered at build time by `Bibliography` (citeproc-java), so the page contains
+finished HTML – search, print and slides need nothing extra.
+
+- **Lookup:** `.bib` files and a style ending in `.csl` are searched next to the page first,
+  then in each parent folder up to `content/` – one shared file per lecture is enough.
+- **Bundled styles** (`src/main/resources/csl/`, CC BY-SA 3.0 from the
+  [CSL style repository](https://github.com/citation-style-language/styles)): `ieee`,
+  `springer-vancouver-brackets`, `din-1505-2-numeric`, `din-1505-2`, `apa`. Any other style:
+  put its `.csl` file into `content/` and set `citationStyle=<file>.csl`, or add it to the
+  resources folder.
+- **Code stays code:** inside fenced blocks and inline code spans, `[@key]` and `[BIB]` are
+  not touched, so the syntax can be documented.
+- **Errors never fail the build:** an unknown key stays visible (highlighted, class
+  `citation-missing`); unknown keys, missing files and a missing `[BIB]` are reported as
+  `[bib] WARNING` on the console.
 
 ### Maps (`map` blocks)
 

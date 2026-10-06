@@ -102,5 +102,6 @@ The remaining topics of this lecture cover, in order:
 - **Images** – embedding images and managing them per language.
 - **Diagrams** – creating diagrams with PlantUML straight from the text.
 - **Formulas** – typesetting mathematical formulas in LaTeX.
+- **References** – citing sources from a BibTeX file and generating a reference list.
 
 Use the sidebar on the left to move on to the next topic.

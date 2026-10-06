@@ -1020,6 +1020,43 @@ html::-webkit-scrollbar-thumb:hover { background: var(--color-primary-light); }
     background: var(--color-accent);
 }
 
+/* Literaturverzeichnis ([BIB]) und Zitate ([@key]) - HTML von citeproc-java.
+   Numerische Stile liefern die Nummer in .csl-left-margin: sie steht als
+   eigene Spalte links, der Eintrag haengt daneben ein. */
+.bibliography {
+    margin: 1rem 0 1.6rem;
+    font-size: 0.95rem;
+}
+
+.bibliography .csl-entry {
+    display: flex;
+    gap: 0.6rem;
+    margin: 0 0 0.6rem;
+    overflow-wrap: anywhere;   /* lange URLs/DOIs brechen um */
+}
+
+.bibliography .csl-left-margin {
+    flex: 0 0 2.4rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.bibliography .csl-right-inline {
+    flex: 1;
+}
+
+/* Sprungziel kurz hervorheben, damit man den Eintrag nach dem Klick findet. */
+.bibliography .csl-entry:target {
+    background: var(--color-mark);
+}
+
+a.citation {
+    text-decoration: none;
+}
+
+.citation-missing {
+    color: var(--color-warm);
+}
+
 /* ============================================================
    FOOTER
    ============================================================ */

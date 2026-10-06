@@ -102,5 +102,6 @@ Die weiteren Themen dieser Vorlesung behandeln der Reihe nach:
 - **Bilder** – Bilder einbinden und sprachabhängig verwalten.
 - **Diagramme** – Diagramme mit PlantUML direkt aus dem Text erzeugen.
 - **Formeln** – mathematische Formeln in LaTeX setzen.
+- **Literatur** – Quellen aus einer BibTeX-Datei zitieren und ein Literaturverzeichnis erzeugen.
 
 Wechsle über die Seitenleiste links zum nächsten Thema.

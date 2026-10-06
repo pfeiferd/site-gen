@@ -17,6 +17,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jbake.version>2.7.0</jbake.version>
         <plantuml.version>1.2024.7</plantuml.version>
+        <citeproc.version>3.5.2</citeproc.version>
+        <csl.locales.version>26.8</csl.locales.version>
         <!-- Zentral konfigurierbare Lage des Quell-Content-Ordners; wird als Arg an die
              Build-Tools durchgereicht. Ueberschreibbar per -Dcontent.dir=... . Staging-/
              Output-Verzeichnisse bleiben unter ${project.build.directory}. -->
@@ -36,6 +38,19 @@
             <groupId>net.sourceforge.plantuml</groupId>
             <artifactId>plantuml</artifactId>
             <version>${plantuml.version}</version>
+        </dependency>
+        <!-- Literaturverzeichnisse: liest .bib-Dateien und formatiert Zitate und
+             Eintraege nach einem CSL-Stil (Stile unter src/main/resources/csl/). -->
+        <dependency>
+            <groupId>de.undercouch</groupId>
+            <artifactId>citeproc-java</artifactId>
+            <version>${citeproc.version}</version>
+        </dependency>
+        <!-- Sprachangaben (de-DE, en-US, ...) fuer citeproc-java. -->
+        <dependency>
+            <groupId>org.citationstyles</groupId>
+            <artifactId>locales</artifactId>
+            <version>${csl.locales.version}</version>
         </dependency>
     </dependencies>
 
