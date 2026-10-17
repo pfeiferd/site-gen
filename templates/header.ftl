@@ -176,11 +176,32 @@
 </#if></#list>
 <#assign curIcon  = content.lectureIcon!"" />
 
-<#-- Themen der aktuellen Vorlesung (nur in der aktuellen Sprache) fuer die Seitenleiste. -->
+<#-- Hauptnavigation in der Kopfzeile: Seiten mit "topnav=<Reihenfolge>" im
+     Frontmatter. Eine Firmensite hat so neben dem Seitenmenue eine obere
+     Leiste (Home, Neues, Kontakt, Impressum ...); diese Seiten stehen dann
+     NICHT mehr im Seitenmenue. Ohne solche Seiten bleibt alles wie bisher:
+     der feste "Start"-Knopf, der zur Startseite fuehrt. Die Leiste zeigt nur
+     Seiten der aktuellen Sprache - Seiten ohne Sprachordner (Startseite) immer. -->
+<#assign topPages = [] />
+<#list published_pages as pg>
+    <#if (pg.topnav!"")?has_content && ((pg.lang!"") == "" || (pg.lang!"de") == curLang)>
+        <#assign topPages = topPages + [pg] />
+    </#if>
+</#list>
+<#assign topPages = topPages?sort_by("topnav") />
+
+<#-- Ueberschrift des Seitenmenues: sidebarTitle aus den meta.properties
+     (je Bereich verschieden, z. B. "Produktinfo" und "Dokumentation"); ohne
+     Angabe wie bisher der site-weite Oberflaechentext sidebar.lecture. -->
+<#assign sidebarTitle = (content.sidebarTitle)!"" />
+
+<#-- Themen der aktuellen Vorlesung (nur in der aktuellen Sprache) fuer die Seitenleiste.
+     Seiten der Hauptnavigation (topnav) bleiben aussen vor. -->
 <#macro lectureNav>
     <#assign navPages = [] />
     <#list published_pages as pg>
-        <#if (pg.navgroup!"") == "docs" && (pg.lecture!"") == curLecture && (pg.lang!"de") == curLang>
+        <#if (pg.navgroup!"") == "docs" && (pg.lecture!"") == curLecture && (pg.lang!"de") == curLang
+             && !(pg.topnav!"")?has_content>
             <#assign navPages = navPages + [pg] />
         </#if>
     </#list>
@@ -196,7 +217,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Vorlesungsunterlagen – Hochschule Heilbronn, Fakultät Informatik">
+    <#-- Beschreibung fuer Suchmaschinen: siteDescription aus content/meta.properties.
+         Ohne Angabe der bisherige feste Text, damit sich an bestehenden Sites
+         nichts aendert. -->
+    <meta name="description" content="${((content.siteDescription)!"Vorlesungsunterlagen – Hochschule Heilbronn, Fakultät Informatik")?html}">
     <#-- Titel der Registerkarte: "<Seite> – <Vorlesung> · <Site>".
          <Site> kommt aus siteTitle (content/meta.properties); ohne Angabe steht
          dort der Name des Traegers. Traegt die Site denselben Namen wie die
@@ -304,10 +328,19 @@
         </div>
         <nav class="main-nav" aria-label="Hauptnavigation">
             <ul>
+                <#if (topPages?size > 0)>
+                <#list topPages as pg>
+                <li>
+                    <a href="${content.rootpath}${pg.uri}"
+                       <#if (content.uri!"") == pg.uri>class="active"</#if>>${(pg.navlabel!pg.title)?html}</a>
+                </li>
+                </#list>
+                <#else>
                 <li>
                     <a href="${content.rootpath}index.html"
                        <#if (content.uri!"") == "index.html">class="active"</#if>><img class="main-nav-icon" src="${content.rootpath}images/aperture.svg" alt=""><span data-i18n="nav.start">${ui('nav.start', 'Start')}</span></a>
                 </li>
+                </#if>
             </ul>
         </nav>
         <div class="print-search-group">
@@ -370,8 +403,15 @@
             </button>
             <div class="product-label">
                 <#if curIcon?has_content><img class="product-icon" src="images/${curIcon}" alt=""></#if>
+                <#if sidebarTitle?has_content>
+                <#-- Fester Titel des Bereichs - ohne data-i18n, sonst setzte i18n.js
+                     beim Laden den site-weiten Text darueber. -->
+                <span class="product-label-text">${sidebarTitle?html}</span>
+                <span class="product-label-vert">${sidebarTitle?html}</span>
+                <#else>
                 <span class="product-label-text" data-i18n="sidebar.lecture">${ui('sidebar.lecture', 'Unterlagen')}</span>
                 <span class="product-label-vert" data-i18n="sidebar.lecture">${ui('sidebar.lecture', 'Unterlagen')}</span>
+                </#if>
             </div>
         </div>
         <div class="nav-scroll">
@@ -385,5 +425,7 @@
 
     <main class="main-content">
         <div class="print-header">
-            <span class="print-logo-text"><#if isLecture>${curTitle} – </#if>Fakultät Informatik, HS Heilbronn</span>
+            <#-- Druckkopf: printHeader aus content/meta.properties; ohne Angabe der
+                 bisherige feste Text. -->
+            <span class="print-logo-text"><#if isLecture>${curTitle} – </#if>${((content.printHeader)!"Fakultät Informatik, HS Heilbronn")?html}</span>
         </div>

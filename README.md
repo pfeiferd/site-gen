@@ -214,6 +214,8 @@ without a hyperlink. All values are UTF-8 capable.
 | `footerOrg` | one organisation in the footer instead of the lecturer – faculty, university chain. Printed verbatim, so the closing full stop (“… e.V.”) belongs into the value. |
 | `siteTitle` | what closes the browser tab’s title, after page and lecture name (default: `universityName`). A site named like its single lecture drops the duplicate lecture part. |
 | `mapTiles`, `mapAttribution` | tile server and credit for all maps of the site (see [Maps](#maps-map-blocks)) |
+| `siteDescription` | text of `<meta name="description">` (default: the lecture-notes wording of this project) |
+| `printHeader` | text of the print header after the lecture title (default: "Fakultät Informatik, HS Heilbronn") |
 
 External links automatically open in a new tab (`target="_blank"`).
 
@@ -339,6 +341,33 @@ Notes:
   with no way back.
 - The night-mode button, the language switch, the search field and the sidebar toggle are not
   affected; they stay available.
+
+### Top navigation (`topnav`) and the sidebar title (`sidebarTitle`)
+
+The header carries a single **Start** button by default. A site that wants a top
+navigation of its own – a company site with *Home, News, Contact, Imprint* beside the
+sidebar – marks those pages in their front matter:
+
+```
+topnav=02
+```
+
+Pages with `topnav` appear in the header in that order (label: `navlabel`, else `title`)
+and are **left out of the sidebar**, so the two menus do not repeat each other. The fixed
+Start button goes away as soon as one page carries `topnav`; put it on the entry page
+instead (`topnav=01` on `de/index.md`). Only pages of the current language are shown.
+Sites without `topnav` pages are rendered exactly as before.
+
+`sidebarTitle` in a `meta.properties` names the sidebar of that lecture ("Product info",
+"Documentation") in place of the site-wide `sidebar.lecture` text; it follows the usual
+cascade, so each lecture can carry its own.
+
+### Linked images and the lightbox
+
+Every content image opens in the lightbox. If the image sits inside a link to an image
+file – the classic gallery markup `<a href="full/shot.png"><img src="thumb.png">` – the
+lightbox shows the **linked** file and the link itself is not followed, so the reader
+stays on the page. Links to anything else (a PDF, a page) keep working as links.
 
 ### Internal links (`.md` → `.html`)
 

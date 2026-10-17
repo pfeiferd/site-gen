@@ -70,8 +70,18 @@
     overlay.appendChild(close);
     document.body.appendChild(overlay);
 
+    /* Ist das Bild in einen Link auf eine Bilddatei gehuellt (klassische
+       Galerie: Miniatur verlinkt auf die Vollansicht), zeigt die Lightbox
+       das verlinkte Bild - und der Link wird nicht mehr verfolgt, sonst
+       verliesse der Klick die Seite. Andere Links bleiben unangetastet. */
+    var IMG_FILE = /\.(png|jpe?g|gif|svg|webp|avif)(\?.*)?$/i;
+    function fullSource(img) {
+        var a = img.closest && img.closest('a[href]');
+        if (a && IMG_FILE.test(a.getAttribute('href'))) return a.href;
+        return img.currentSrc || img.src;
+    }
     function open(img) {
-        big.src = img.currentSrc || img.src;
+        big.src = fullSource(img);
         big.alt = img.alt || '';
         overlay.classList.add('open');
         document.documentElement.style.overflow = 'hidden';
@@ -83,7 +93,10 @@
     }
 
     imgs.forEach(function (img) {
-        img.addEventListener('click', function () { open(img); });
+        img.addEventListener('click', function (e) {
+            if (fullSource(img) !== (img.currentSrc || img.src)) e.preventDefault();
+            open(img);
+        });
     });
     /* Klick auf den Hintergrund oder das Kreuz schliesst; Klick auf das Bild
        selbst laesst die Ansicht offen. */
