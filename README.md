@@ -362,6 +362,12 @@ Sites without `topnav` pages are rendered exactly as before.
 "Documentation") in place of the site-wide `sidebar.lecture` text; it follows the usual
 cascade, so each lecture can carry its own.
 
+`sidebarLectureLinks=true` (site-wide, or per lecture) adds a foot to the sidebar with a
+link into every *other* lecture of the site – labelled with its `sidebarTitle`, else its
+title – so that a site with two areas (a product site and its documentation, say) can be
+crossed without going back to the start page. The lecture at the content root is shown
+with a back arrow («), any other with a forward arrow (»).
+
 ### Linked images and the lightbox
 
 Every content image opens in the lightbox. If the image sits inside a link to an image

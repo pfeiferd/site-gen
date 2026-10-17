@@ -159,6 +159,7 @@
             "title":   deT?has_content?then(deT, enT?has_content?then(enT, slugToTitle(pg.lecture))),
             "titleEn": enT?has_content?then(enT, deT?has_content?then(deT, slugToTitle(pg.lecture))),
             "icon":    pg.lectureIcon!"",
+            "sidebarTitle": pg.sidebarTitle!"",
             "entry":   entryDe,
             "entryEn": entryEn
         }] />
@@ -419,6 +420,30 @@
                 <ul><@lectureNav/></ul>
             </nav>
         </div>
+        <#-- Fuss des Seitenmenues: Links in die anderen Bereiche der Site
+             (sidebarLectureLinks=true in meta.properties). Beschriftet mit
+             deren sidebarTitle, sonst dem Vorlesungstitel; der Bereich in der
+             Site-Wurzel bekommt einen Pfeil zurueck, jeder andere einen nach
+             vorn. Ohne den Schluessel fehlt der Block - wie bisher. -->
+        <#if (content.sidebarLectureLinks!"false") == "true">
+        <#assign otherLectures = [] />
+        <#list lectures as lec><#if lec.slug != curLecture><#assign otherLectures = otherLectures + [lec] /></#if></#list>
+        <#if (otherLectures?size > 0)>
+        <div class="nav-foot">
+            <nav aria-label="${ui('sidebar.other', 'Weitere Bereiche')}" data-i18n-aria="sidebar.other">
+                <ul>
+                    <#list otherLectures as lec>
+                    <#assign otherEntry = (curLang == "en")?then(lec.entryEn, lec.entry) />
+                    <#assign otherLabel = lec.sidebarTitle?has_content?then(lec.sidebarTitle, (curLang == "en")?then(lec.titleEn, lec.title)) />
+                    <li class="nav-other">
+                        <a href="${content.rootpath}${otherEntry}"><#if otherEntry?starts_with(curLang + "/") || otherEntry?starts_with("de/")><span class="nav-cta-arrow" aria-hidden="true">&#171;</span> ${otherLabel?html}<#else>${otherLabel?html} <span class="nav-cta-arrow" aria-hidden="true">&#187;</span></#if></a>
+                    </li>
+                    </#list>
+                </ul>
+            </nav>
+        </div>
+        </#if>
+        </#if>
     </aside>
     </div>
     </#if>

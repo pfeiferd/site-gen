@@ -367,6 +367,38 @@ a:hover {
     flex: 0 0 auto;
 }
 
+/* Fuss des Seitenmenues: Links in die anderen Bereiche der Site (nur mit
+   sidebarLectureLinks=true, siehe header.ftl). Abgesetzt von den Themen,
+   betont wie ein Wegweiser. */
+.nav-foot {
+    border-top: 1px solid var(--color-border);
+}
+
+.nav-foot nav ul {
+    list-style: none;
+    padding: 0.2rem 0;
+}
+
+.nav-foot .nav-other a {
+    display: block;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+}
+
+.nav-foot .nav-other a:hover {
+    background: var(--color-accent);
+    text-decoration: none;
+}
+
+.nav-cta-arrow {
+    font-weight: 700;
+    font-size: 1.15em;
+}
+
 .nav-header {
     background: var(--color-surface);
     cursor: pointer;
