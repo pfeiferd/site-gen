@@ -24,7 +24,7 @@ LaTeX formulas are typeset locally – without any external services.
     - [One lecture without a lecture folder](#one-lecture-without-a-lecture-folder)
   - [Visibility: `publish`](#visibility-publish)
   - [Document-only lectures (`documentOnly`)](#document-only-lectures-documentonly)
-  - [Header controls (`showViewSwitch`, `showFullscreen`, `showHeaderToggle`)](#header-controls-showviewswitch-showfullscreen-showheadertoggle)
+  - [Header controls (`showViewSwitch`, `showFullscreen`, `showHeaderToggle`, `showThemeToggle`)](#header-controls-showviewswitch-showfullscreen-showheadertoggle-showthemetoggle)
   - [Internationalization (i18n)](#internationalization-i18n)
   - [Interface state in the URL](#interface-state-in-the-url)
   - [Images](#images)
@@ -308,9 +308,9 @@ is `false`.
 documentOnly=true
 ```
 
-### Header controls (`showViewSwitch`, `showFullscreen`, `showHeaderToggle`)
+### Header controls (`showViewSwitch`, `showFullscreen`, `showHeaderToggle`, `showThemeToggle`)
 
-Three controls of the header can be switched off individually. All three default to `true`;
+Four controls of the header can be switched off individually. All four default to `true`;
 only the literal value `false` hides the control. Like every other metadata key they follow the
 cascade: in `content/meta.properties` they apply to the **whole site**, in a lecture's
 `content/<lecture>/meta.properties` only to that lecture (and a single `.md`'s front matter can
@@ -321,6 +321,7 @@ still override them for one page).
 | `showViewSwitch` | the Document/Slides switch in the top right |
 | `showFullscreen` | the fullscreen button in the top right |
 | `showHeaderToggle` | the arrow in the top left that collapses/expands the header |
+| `showThemeToggle` | the night-mode button – and night mode itself: the site stays light even with a dark system setting or `?theme=dark` |
 
 ```properties
 # content/meta.properties – site-wide, or in content/<lecture>/meta.properties per lecture
@@ -339,8 +340,8 @@ Notes:
 - `showHeaderToggle=false` also means the header can no longer be collapsed: a stored or
   URL-supplied collapsed state (`?hd=c`) is ignored, so the header cannot get stuck in a state
   with no way back.
-- The night-mode button, the language switch, the search field and the sidebar toggle are not
-  affected; they stay available.
+- The language switch, the search field and the sidebar toggle are not affected by the
+  first three; they stay available.
 
 ### Top navigation (`topnav`) and the sidebar title (`sidebarTitle`)
 
@@ -361,6 +362,10 @@ Sites without `topnav` pages are rendered exactly as before.
 `sidebarTitle` in a `meta.properties` names the sidebar of that lecture ("Product info",
 "Documentation") in place of the site-wide `sidebar.lecture` text; it follows the usual
 cascade, so each lecture can carry its own.
+
+`navheading=<text>` in a page's front matter puts a heading into the sidebar **before**
+that page's entry – a long sidebar falls into groups ("Web view", "Planner client") without
+any further structure in the content folder. Pages without the key are listed as before.
 
 `sidebarLectureLinks=true` (site-wide, or per lecture) adds a foot to the sidebar with a
 link into every *other* lecture of the site – labelled with its `sidebarTitle`, else its

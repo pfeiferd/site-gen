@@ -10,6 +10,9 @@
 <#assign showViewSwitch   = (content.showViewSwitch!"true") != "false" />
 <#assign showFullscreen   = (content.showFullscreen!"true") != "false" />
 <#assign showHeaderToggle = (content.showHeaderToggle!"true") != "false" />
+<#-- showThemeToggle=false: kein Nachtmodus - der Mond-Knopf entfaellt, und die
+     Seite bleibt hell, auch bei dunkler Systemeinstellung oder ?theme=dark. -->
+<#assign showThemeToggle  = (content.showThemeToggle!"true") != "false" />
 <#assign curLecture = content.lecture!"" />
 <#assign curLang = content.lang!"de" />
 <#assign uiLangs = ["de", "en"] />
@@ -207,6 +210,12 @@
         </#if>
     </#list>
     <#list navPages?sort_by("navorder") as pg>
+        <#-- navheading=<Text> im Frontmatter: eine Zwischenueberschrift VOR dem
+             Eintrag dieser Seite - gliedert ein langes Seitenmenue in Gruppen
+             ("Web-Ansicht", "Planer-Client"). Ohne den Schluessel wie bisher. -->
+        <#if (pg.navheading!"")?has_content>
+        <li class="nav-heading">${pg.navheading?html}</li>
+        </#if>
         <li>
             <a href="${content.rootpath}${pg.uri}"
                <#if content.uri == pg.uri>class="active"</#if>>${pg.navlabel!pg.title}</a>
@@ -276,6 +285,7 @@
     // nicht ausdruecklich umgeschaltet wurde. data-theme-chosen merkt sich, ob
     // die Anzeige ausdruecklich gewaehlt wurde - nur dann wandert 'theme' als
     // Parameter an die Links weiter (siehe i18n.js).
+<#if showThemeToggle>
     var tq=P('theme'),T=null,chosen=false;
     if(tq==='dark'||tq==='light'){T=tq;chosen=true;W('theme',T);}
     else{T=S('theme');
@@ -284,6 +294,10 @@
         T=mq?'dark':'light';}}
     d.setAttribute('data-theme',T);
     if(chosen)d.setAttribute('data-theme-chosen','1');
+<#else>
+    // Kein Nachtmodus auf dieser Site (showThemeToggle=false): immer hell.
+    d.setAttribute('data-theme','light');
+</#if>
 
     var isLecture=<#if isLecture>true<#else>false</#if>;
     var documentOnly=<#if documentOnly>true<#else>false</#if>;
@@ -386,10 +400,13 @@
             </button>
             </#if>
             <#-- Nachtmodus ganz rechts. Mond = "auf dunkel umschalten",
-                 Sonne = "zurueck auf hell" (Feather-Icons, wie die uebrigen). -->
+                 Sonne = "zurueck auf hell" (Feather-Icons, wie die uebrigen).
+                 Per showThemeToggle=false abschaltbar. -->
+            <#if showThemeToggle>
             <button type="button" class="theme-toggle" aria-label="${ui('theme.toggle', 'Nachtmodus umschalten')}" title="${ui('theme.toggle', 'Nachtmodus')}" aria-pressed="false" data-i18n-aria="theme.toggle" data-i18n-title="theme.toggle">
                 <span class="theme-toggle-icons" aria-hidden="true"><svg class="theme-toggle-icon theme-toggle-moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="theme-toggle-icon theme-toggle-sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
             </button>
+            </#if>
         </div>
     </div>
 </header>

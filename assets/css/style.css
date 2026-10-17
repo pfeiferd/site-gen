@@ -367,6 +367,22 @@ a:hover {
     flex: 0 0 auto;
 }
 
+/* Zwischenueberschriften im Seitenmenue (navheading=<Text> im Frontmatter,
+   siehe header.ftl): betont wie eine kleine Kapitelueberschrift, mit dem
+   Akzentbalken links wie die h2 im Inhalt. */
+.sidebar-nav nav li.nav-heading {
+    padding: 0.55rem 0.65rem 0.2rem 0.6rem;
+    font-size: 0.87rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    border-left: 3px solid var(--color-warm);
+}
+
+/* Die erste Ueberschrift schliesst buendig oben an. */
+.sidebar-nav nav ul > li.nav-heading:first-child {
+    margin-top: -0.2rem;
+}
+
 /* Fuss des Seitenmenues: Links in die anderen Bereiche der Site (nur mit
    sidebarLectureLinks=true, siehe header.ftl). Abgesetzt von den Themen,
    betont wie ein Wegweiser. */
