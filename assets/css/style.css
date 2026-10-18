@@ -1903,30 +1903,32 @@ html[data-theme="dark"] .hljs-strong { color: #c9d1d9; }
 /* Slide-Footer: nur im Druck sichtbar. */
 .slide-print-footer { display: none; }
 
-/* Laufender Fuss der Dokument-Druckansicht: optisch wie der Folien-Fuss, per
-   position:fixed am unteren Rand JEDER Druckseite wiederholt (Titel links,
-   Copyright rechts). Der reservierte @page-Unterrand haelt den Textfluss frei.
-   top:auto/bottom:0 stellt sicher, dass er unten steht und nicht als Kopf auf
-   der ersten Seite erscheint. Nur im Dokument-Druck (nicht am Bildschirm, nicht
-   im Slide-Druck). */
+/* Fuss der Dokument-Druckansicht: optisch wie der Folien-Fuss (Titel links,
+   Copyright rechts), gedruckt EINMAL am Ende des Dokuments. Nur im
+   Dokument-Druck (nicht am Bildschirm, nicht im Slide-Druck).
+
+   Frueher stand er per position:fixed am unteren Rand jeder Seite. Das
+   ueberlagert aber die letzten Zeilen: ein fixiertes Element liegt an der
+   Unterkante des Satzspiegels, also genau dort, wo der Text endet - der
+   @page-Unterrand liegt AUSSERHALB davon und haelt nichts frei. Platz je Seite
+   reserviert nur ein echter <tfoot> (nicht einmal display:table-footer-group,
+   das Chromium nicht wiederholt), und den wiederholt Safari gar nicht. Ein
+   Tabellengeruest um jeden Seiteninhalt waere der Preis - zu hoch fuer eine
+   Fusszeile. Also einmal am Schluss, ohne etwas zu verdecken. */
 .doc-print-footer { display: none; }
 
 @media print {
     html:not(.mode-slides) .doc-print-footer {
         display: flex;
-        position: fixed;
-        left: 0;
-        right: 0;
-        top: auto;
-        bottom: 0;
         justify-content: space-between;
         align-items: center;
         gap: 1rem;
+        margin-top: 8mm;
         font-size: 9pt;
         color: #555;
-        background: #fff;
         border-top: 0.5pt solid #bbb;
         padding-top: 2mm;
+        break-inside: avoid;
     }
 }
 
