@@ -90,10 +90,18 @@ in the clone URL, as the comment at the top of the file describes.
 GitLab instance; on GitHub that job is done by `.github/workflows/pages.yml`.
 
 **Locally.** A small `pom.xml` in the content repo can drive the engine, so that `mvn package`
-works there as usual: an `exec` execution runs `mvn -f <engine>/pom.xml package
--Dcontent.dir=<here>/content -Dsite.dir=<here>/target/website`. Keep the engine directory
-configurable (`-Dengine.dir=…`) and clear `target/website` before the run, since JBake does
-not wipe its output. The site of the *Deutsche Borreliose-Gesellschaft* is built that way.
+works there as usual. It binds the engine's steps to the plugins directly, without a nested
+Maven run: `sourceDirectory` and `resources` point at `<engine>/src/main`, the compiler plugin
+builds the tools into the content repo's `target/classes`, an `exec` execution runs
+`de.hshn.lectures.build.PlantumlPreprocessor` with the project classpath and the arguments
+`<here>/content <engine>/target <here>/target/website <engine>`, and the JBake Maven plugin
+bakes with `inputDirectory=<engine>` and `outputDirectory=<here>/target/website`. The three
+runtime dependencies (PlantUML, citeproc-java, CSL locales) are repeated in that pom with the
+versions from this one. Keep the engine directory configurable (`-Dengine.dir=…`) and clear
+`target/website` before the run, since JBake does not wipe its output. Staging stays in
+`<engine>/target` because JBake resolves `content.folder` and `asset.folder` relative to the
+engine. The sites of the *Deutsche Borreliose-Gesellschaft* and *Progotec GmbH* are built that
+way.
 
 Whichever route: everything the pages load must be **committed**. Assets added later – a
 bundled library, marker images, a `content/data/*.json` – are new files, and `git commit -a`
