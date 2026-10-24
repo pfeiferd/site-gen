@@ -674,7 +674,11 @@ pins fit.
 The three last lines build a **filter bar**: the drop-down is filled from the
 values actually present in the data (no second list to maintain in the Markdown),
 the text box matches title, subtitle and every line – postcode and town
-included – and the list below the map jumps to a pin when clicked. A counter
+included – and the list below the map jumps to a pin when clicked. A query
+consisting of digits only is taken as a postcode: it matches entries whose
+"postcode town" line *starts* with those digits (`90` finds 90429 Nürnberg but
+not a phone number or house number containing 90); any other query matches
+anywhere in the text. A counter
 shows how many of the entries are visible, and everything filters in the browser,
 with the map re-fitting to what is left.
 

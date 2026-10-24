@@ -79,6 +79,20 @@
             .filter(Boolean).join(' ').toLowerCase();
     }
 
+    /* Suchbegriff gegen einen Eintrag: Woerter suchen im ganzen Text; eine
+       reine Ziffernfolge gilt als Postleitzahl und muss am ANFANG einer
+       Zeile "PLZ Ort" stehen. Sonst traefe "90" auch Telefonnummern,
+       Hausnummern oder die 90 in einer anderen Postleitzahl. */
+    function matches(entry, q) {
+        if (!q) return true;
+        if (/^\d+$/.test(q)) {
+            return (entry.lines || []).some(function (t) {
+                return /^\d{4,5}\s/.test(t) && t.indexOf(q) === 0;
+            });
+        }
+        return haystack(entry).indexOf(q) !== -1;
+    }
+
     /* Beschriftungen der Filterleiste: deutsch steht im Template, englisch in
        den Sprachdateien der Site (site_en.properties). */
     function label(key, fallback) {
@@ -179,7 +193,7 @@
             function passt(entry) {
                 if (auswahl && feld && auswahl.value && entry[feld] !== auswahl.value) return false;
                 var q = suche ? suche.value.trim().toLowerCase() : '';
-                return !q || haystack(entry).indexOf(q) !== -1;
+                return matches(entry, q);
             }
 
             function anwenden() {
