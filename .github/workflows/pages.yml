@@ -40,6 +40,13 @@ jobs:
       - name: Schriften fuer PlantUML
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fontconfig fonts-dejavu-core
 
+      # TikZ/pgfplots-Grafiken (```tikz-Bloecke) setzt der Bau mit einem
+      # installierten LaTeX: latex + dvisvgm. Der Runner bringt kein TeX mit,
+      # dieser Schritt holt das Noetige (~230 MB, rund eine Minute). Fehlt er,
+      # zeigt die Site Platzhalter statt der Grafiken.
+      - name: LaTeX fuer TikZ-Grafiken
+        run: sudo apt-get install -y -qq --no-install-recommends texlive-pictures preview-latex-style cm-super dvisvgm
+
       - name: Site bauen
         run: mvn -B --no-transfer-progress clean package
 

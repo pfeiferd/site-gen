@@ -3,7 +3,8 @@
 A static, bilingual (DE/EN) website for lecture notes, generated with
 [JBake](https://jbake.org/). Each lecture consists of Markdown files that can be shown
 either as a **document** (continuous text) or as a **slide deck**. PlantUML diagrams and
-LaTeX formulas are typeset locally – without any external services.
+LaTeX formulas are typeset locally – without any external services. TikZ and pgfplots
+figures are compiled at build time with an installed LaTeX.
 
 > **Authoring content?** How to *write* a lecture (Markdown, images, diagrams, formulas)
 > is demonstrated by the lecture **"Tutorial: Authoring a Lecture"** included in the project,
@@ -32,6 +33,7 @@ LaTeX formulas are typeset locally – without any external services.
   - [Site-specific styles (`content/style.css`)](#site-specific-styles-contentstylecss)
   - [Automatic values (date, copyright)](#automatic-values-date-copyright)
   - [Enabling LaTeX/formulas (`math`)](#enabling-latexformulas-math)
+  - [TikZ and pgfplots figures (`tikz` blocks)](#tikz-and-pgfplots-figures-tikz-blocks)
   - [Bibliographies (`bibliography`, `citationStyle`)](#bibliographies-bibliography-citationstyle)
   - [Maps (`map` blocks)](#maps-map-blocks)
   - [Smooth scrolling](#smooth-scrolling)
@@ -45,6 +47,14 @@ LaTeX formulas are typeset locally – without any external services.
 
 All further dependencies (JBake, PlantUML, MathJax) are provided via Maven or bundled
 locally – **no** Graphviz and **no** internet connection are required at runtime.
+
+Optional: a **TeX Live** installation with `latex`, `tikz`, `pgfplots`, `preview` and
+`dvisvgm`, only if the content uses `` ```tikz `` blocks (see
+[TikZ and pgfplots figures](#tikz-and-pgfplots-figures-tikz-blocks)). On Debian/Ubuntu:
+
+```bash
+sudo apt-get install --no-install-recommends texlive-pictures preview-latex-style cm-super dvisvgm
+```
 
 ## Building and viewing
 
@@ -118,6 +128,7 @@ content/                     source content (Markdown, images, configuration)
   images/                    site-wide images (logo, favicon …)
   data/                      data sets for the browser (e.g. map pins, *.json)
   literatur.bib              BibTeX file of the tutorial's "References" page
+  tikz-preamble.tex          LaTeX preamble for ```tikz blocks (optional, cascades)
   common/images/             images shared by all languages of the lecture
   de/  en/                   one folder per language of the lecture
     meta.properties          lectureTitle per language
@@ -162,7 +173,9 @@ so these files survive the bake.
 
 | Tool | Purpose |
 |------|---------|
-| `PlantumlPreprocessor` | Entry point; renders `` ```plantuml `` blocks and `*.puml` files to SVGs under `target/website/images/plantuml/` using the Graphviz-free **Smetana** layout. Unchanged diagrams are skipped via SHA-256. Then invokes `MetaMerge`, `ImageCascade`, `IndexRedirects`, `DataBundle` and `AssetStrip`. |
+| `PlantumlPreprocessor` | Entry point; renders `` ```plantuml `` blocks and `*.puml` files to SVGs under `target/website/images/plantuml/` using the Graphviz-free **Smetana** layout. Unchanged diagrams are skipped via SHA-256. Then invokes `TikzPreprocessor`, `MetaMerge`, `ImageCascade`, `IndexRedirects`, `DataBundle` and `AssetStrip`. |
+| `TikzPreprocessor` | Renders `` ```tikz `` blocks and `*.tikz` files to SVGs under `target/website/images/tikz/` by running an **installed** `latex` (DVI) and `dvisvgm` (`--no-fonts`: glyphs become paths). Same naming convention and SHA-256 skipping as PlantUML; scratch files under `target/tikz-work/`. Without a TeX installation it writes placeholder SVGs and warns; a figure that does not compile fails the build with the LaTeX log excerpt. |
+| `FencedBlocks` | Finds the fenced code blocks of one language the way the Markdown parser does (fence length, indentation, nesting), so that the preprocessors and `page.ftl` number the same blocks – a `` ```` `` block that merely *shows* a `` ```tikz `` example is not a figure. |
 | `MetaMerge` | Merges the `meta.properties` cascade into each `.md`'s front matter and writes the result to `target/staged-content/` (JBake's actual source folder). Evaluates `publish`, fills in a missing `date`, builds the i18n tables, and has `Bibliography` format citations. |
 | `Bibliography` | Turns `[@key]` citations and a `[BIB]` line into HTML while a page is staged: reads the `.bib` file(s) named by `bibliography`, formats them with **citeproc-java** in the CSL style `citationStyle` and the page's language. Code blocks and inline code are left alone. |
 | `ImageCascade` | Materializes images according to the cascade (see below) into `target/website/`. |
@@ -610,6 +623,49 @@ matter. It uses the **locally bundled** MathJax (`assets/js/tex-svg.js`, SVG out
 external fonts, no CDN). The delimiters are `$…$` (inline) and `$$…$$` (displayed); in addition,
 `` ```math `` code blocks are turned into displayed formulas. `$` delimiters are used on
 purpose instead of `\(…\)`, because the latter would be destroyed by the Markdown parser.
+
+### TikZ and pgfplots figures (`tikz` blocks)
+
+A `` ```tikz `` code block is compiled at build time and replaced by an SVG, exactly like a
+`` ```plantuml `` block. The block may hold the bare *inside* of a `tikzpicture` (a pgfplots
+`axis` included), one or more complete `tikzpicture` environments, or a whole document
+starting with `\documentclass` (used as is). Leading comment lines `% width=55%` and
+`% alt=…` set the image width (any CSS width) and its alternative text. Standalone `*.tikz`
+files next to the pages are rendered to `images/tikz/<same path>.svg` and embedded like
+any image. The tutorial page "TikZ and pgfplots" shows all of it live.
+
+**Toolchain.** There is no TeX in Java, so the build runs an installed `latex` (DVI output)
+and `dvisvgm`; both must be on the `PATH`, or named via the environment variables
+`TIKZ_LATEX` and `TIKZ_DVISVGM`. The DVI route is deliberate: pgf's native `dvisvgm`
+driver turns fills, shadings and opacity into plain SVG without Ghostscript, and
+`--no-fonts` converts every glyph to a path, so the site needs no fonts for the figures.
+Required TeX packages: `tikz`/`pgf`, `pgfplots`, `preview` (crops the page to the figure),
+`amsmath`, and the Type 1 fonts (`cm-super`). The Debian/Ubuntu package set is
+`texlive-pictures preview-latex-style cm-super dvisvgm` (about 230 MB without recommends);
+`texlive-latex-extra` on top if figures need e.g. the `standalone` class.
+
+**CI.** GitHub's and GitLab's runners ship no TeX. The workflow templates
+(`.github/workflows/pages.yml`, `content-repo.github-workflow.yml`,
+`content-repo.gitlab-ci.yml`) install the package set above with `apt-get` in a step of
+their own, right after the fonts for PlantUML – about a minute per run. A content repo
+without `tikz` blocks can drop that step.
+
+**Preamble.** Every block is prefixed with `tikz`, `pgfplots` (`compat=newest`),
+`amsmath`/`amssymb`, `fontenc`/`inputenc`. Additional packages, TikZ libraries, pgfplots
+settings and macros go into `tikz-preamble.tex` files that cascade like `meta.properties`:
+`content/tikz-preamble.tex` (site), `content/<lecture>/tikz-preamble.tex` (lecture),
+`content/<lecture>/<lang>/tikz-preamble.tex` (language) – every file on the path is appended,
+in that order. A preamble that itself starts with `\documentclass` replaces the built-in
+head.
+
+**Missing or failing.** If `latex` or `dvisvgm` is not found, the build prints a warning and
+writes a visible placeholder SVG for every figure that has not been rendered before (without
+a hash marker, so the next build with TeX renders it); everything else is built as usual. A
+block that LaTeX rejects **fails** the build – the message names the page and block
+(`<page>-<n>.svg`), quotes the `!` lines of the log, and points at the scratch folder
+`target/tikz-work/<page>-<n>/` with the full `figure.tex` and `figure.log`. The figures are
+rendered on a white background in both themes (class `tikz-figure` in `assets/css/style.css`),
+just like the PlantUML diagrams.
 
 ### Bibliographies (`bibliography`, `citationStyle`)
 

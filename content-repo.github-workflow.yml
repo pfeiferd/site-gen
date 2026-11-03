@@ -66,6 +66,12 @@ jobs:
       - name: Schriften fuer PlantUML
         run: sudo apt-get update -qq && sudo apt-get install -y -qq fontconfig fonts-dejavu-core
 
+      # Nur noetig, wenn der Inhalt ```tikz-Bloecke oder *.tikz-Dateien hat
+      # (TikZ/pgfplots): latex + dvisvgm, ~230 MB, rund eine Minute. Ohne den
+      # Schritt zeigt die Site an diesen Stellen Platzhalter.
+      - name: LaTeX fuer TikZ-Grafiken
+        run: sudo apt-get install -y -qq --no-install-recommends texlive-pictures preview-latex-style cm-super dvisvgm
+
       # Engine aus .engine/, Inhalt aus diesem Repo, fertige Site nach site/.
       - name: Site bauen
         run: >

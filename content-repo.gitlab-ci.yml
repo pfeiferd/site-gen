@@ -51,6 +51,10 @@ build:
     # PlantUML's Smetana renderer needs fontconfig + a font in headless CI.
     # Harmless if the base image already provides them; drop if not needed.
     - apt-get update -qq && apt-get install -y -qq fontconfig fonts-dejavu-core
+    # Only needed when the content has ```tikz blocks or *.tikz files
+    # (TikZ/pgfplots): latex + dvisvgm, ~230 MB, about a minute. Without it the
+    # site shows placeholders in those places.
+    - apt-get install -y -qq --no-install-recommends texlive-pictures preview-latex-style cm-super dvisvgm
     # Check out the build engine INTO this project's working directory, as a
     # sibling of `content/` (the ".engine" folder is not scanned as content).
     - rm -rf .engine

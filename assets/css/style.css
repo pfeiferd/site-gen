@@ -639,6 +639,16 @@ a:hover {
     border: 1px solid var(--color-border);
 }
 
+/* TikZ/pgfplots-Grafiken (page.ftl ersetzt ```tikz-Bloecke durch ein <img>):
+   dvisvgm liefert sie ohne Hintergrund, mit schwarzen Linien und Schrift.
+   Ein fester weisser Grund haelt sie - wie die PlantUML-Diagramme - auch im
+   Nachtmodus lesbar; etwas Innenabstand, weil die Grafik eng beschnitten ist. */
+.tikz-figure {
+    background: #fff;
+    padding: 0.5rem;
+    box-sizing: border-box;
+}
+
 /* Markdown-Bilder (![](...) ohne content-img-Klasse) ebenfalls auf die
    Spaltenbreite begrenzen, damit sie nie ueber das Layout hinauslaufen. */
 .page-article-body img:not(.content-img) {

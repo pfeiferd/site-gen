@@ -347,6 +347,30 @@
                 <#assign pumlImg = "<img class=\"content-img plantuml-diagram\" src=\"" + content.rootpath + "images/plantuml/" + pumlSlug + "-" + pumlIdx?c + ".svg?v=" + .now?long?c + "\" alt=\"PlantUML-Diagramm\">">
                 <#assign body = body?replace(pm?groups[0], pumlImg)>
             </#list>
+            <#-- TikZ/pgfplots-Codebloecke ebenso durch die vorab erzeugten SVGs ersetzen
+                 (TikzPreprocessor.java, images/tikz/<seite>-<n>.svg). Fuehrende
+                 Kommentarzeilen "% width=..." und "% alt=..." im Block stellen die
+                 Breite und den Alternativtext des Bildes ein; fuer LaTeX sind es
+                 gewoehnliche Kommentare. -->
+            <#assign tikzIdx = 0>
+            <#list body?matches("<pre><code class=\"language-tikz\">(.*?)</code></pre>", "s") as tm>
+                <#assign tikzIdx = tikzIdx + 1>
+                <#assign tikzStyle = ""><#assign tikzAlt = "TikZ-Grafik">
+                <#list tm?groups[1]?split("\n") as tl>
+                    <#assign tOpt = tl?trim?matches("^%\\s*(width|alt)\\s*[=:]\\s*(.+?)\\s*$")>
+                    <#if tOpt>
+                        <#if tOpt?groups[1] == "width">
+                            <#assign tikzStyle = " style=\"width:" + tOpt?groups[2] + "\"">
+                        <#else>
+                            <#assign tikzAlt = tOpt?groups[2]>
+                        </#if>
+                    <#elseif tl?trim?has_content>
+                        <#break>
+                    </#if>
+                </#list>
+                <#assign tikzImg = "<img class=\"content-img tikz-figure\" src=\"" + content.rootpath + "images/tikz/" + pumlSlug + "-" + tikzIdx?c + ".svg?v=" + .now?long?c + "\"" + tikzStyle + " alt=\"" + tikzAlt + "\">">
+                <#assign body = body?replace(tm?groups[0], tikzImg)>
+            </#list>
             <#-- In Folien aufteilen: der Rohtext wird an den <div class="nextpage"></div>-
                  Markern getrennt und jede Folie in eine <section class="slide"> verpackt.
                  In der Dokumentansicht fliessen die Folien nahtlos untereinander,

@@ -12,10 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -48,10 +45,6 @@ import java.util.stream.Stream;
  * {@code java -jar lectures-website-<version>.jar <baseDir>}.</p>
  */
 public final class PlantumlPreprocessor {
-
-    /** Matches a fenced ```plantuml block and captures its body. */
-    private static final Pattern FENCE =
-            Pattern.compile("```plantuml[^\\n]*\\r?\\n(.*?)```", Pattern.DOTALL);
 
     /** Trailing SVG comment that records the hash of the diagram source. */
     private static final String HASH_MARKER = "<!-- puml-source-sha256:";
@@ -92,6 +85,10 @@ public final class PlantumlPreprocessor {
         // Verzeichnis der Engine selbst - dort liegen templates/ und assets/.
         Path engineDir  = args.length > 3 ? Path.of(args[3]) : buildDir.getParent();
         new PlantumlPreprocessor(contentDir, website.resolve("images").resolve("plantuml")).run();
+        // TikZ/pgfplots-Bilder: gleiche Konvention wie PlantUML, nur mit einer
+        // installierten TeX-Distribution statt einer Java-Bibliothek.
+        new TikzPreprocessor(contentDir, website.resolve("images").resolve("tikz"),
+                buildDir.resolve("tikz-work")).run();
         new MetaMerge(contentDir, buildDir.resolve("staged-content")).run();
         new ImageCascade(contentDir, website).run();
         new IndexRedirects(contentDir, website).run();
@@ -128,7 +125,10 @@ public final class PlantumlPreprocessor {
         Path targetDir = rel.getParent() == null ? outputDir : outputDir.resolve(rel.getParent());
         if (name.endsWith(".md")) {
             String slug = name.substring(0, name.length() - ".md".length());
-            List<String> blocks = extractBlocks(TextIO.read(file));
+            // Zaeune wie der Markdown-Parser lesen: ein ````-Block, der ein
+            // ```plantuml-Beispiel ZEIGT, ist kein Diagramm (sonst verschoebe sich
+            // die Nummerierung gegenueber page.ftl).
+            List<String> blocks = FencedBlocks.bodies(TextIO.read(file), "plantuml");
             for (int i = 0; i < blocks.size(); i++) {
                 render(blocks.get(i), targetDir.resolve(slug + "-" + (i + 1) + ".svg"));
             }
@@ -136,15 +136,6 @@ public final class PlantumlPreprocessor {
             String diagramName = name.substring(0, name.lastIndexOf('.'));
             render(TextIO.read(file), targetDir.resolve(diagramName + ".svg"));
         }
-    }
-
-    private List<String> extractBlocks(String markdown) {
-        List<String> blocks = new ArrayList<>();
-        Matcher m = FENCE.matcher(markdown);
-        while (m.find()) {
-            blocks.add(m.group(1));
-        }
-        return blocks;
     }
 
     /**
