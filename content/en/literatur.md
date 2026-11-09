@@ -47,7 +47,9 @@ A line containing only `[BIB]` becomes the reference list. It lists exactly the 
 
 The list for this page is at the very bottom.
 
-Inside code blocks and inline `code`, `[@key]` and `[BIB]` stay untouched – just like in the examples on this page.
+If a page should show a **whole `.bib` file** without citing anything – a publication list, say – name the file on the line: `[BIB publications.bib]`. Every entry of that file then appears, newest first (by `year` and `month`, ties in file order). Several such lines with different files make several sections; the file need not be named under `bibliography=` for this. An author–year style such as `apa` suits such lists better than a numbering one.
+
+Inside code blocks and inline `code`, `[@key]`, `[BIB]` and `[BIB file.bib]` stay untouched – just like in the examples on this page.
 
 
 <div class="nextpage"></div>

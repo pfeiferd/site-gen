@@ -47,7 +47,9 @@ Eine Zeile, die nur `[BIB]` enthält, wird zum Literaturverzeichnis. Es listet g
 
 Das Verzeichnis dieser Seite steht ganz unten.
 
-In Codeblöcken und in `Code` im Fließtext bleiben `[@schlüssel]` und `[BIB]` unverändert – so wie in den Beispielen auf dieser Seite.
+Soll eine Seite eine **ganze `.bib`-Datei** zeigen, ohne etwas zu zitieren – etwa eine Publikationsliste –, nennst Du die Datei in der Zeile: `[BIB veroeffentlichungen.bib]`. Dann erscheinen alle Einträge der Datei, die neuesten zuerst (nach `year` und `month`, bei Gleichstand in der Reihenfolge der Datei). Mehrere solche Zeilen mit verschiedenen Dateien ergeben mehrere Abschnitte; die Datei muss dafür nicht unter `bibliography=` stehen. Für solche Listen passt ein Autor-Jahr-Stil wie `apa` besser als ein nummerierender.
+
+In Codeblöcken und in `Code` im Fließtext bleiben `[@schlüssel]`, `[BIB]` und `[BIB datei.bib]` unverändert – so wie in den Beispielen auf dieser Seite.
 
 
 <div class="nextpage"></div>

@@ -4,8 +4,11 @@ import de.undercouch.citeproc.CSL;
 import de.undercouch.citeproc.bibtex.BibTeXItemDataProvider;
 import de.undercouch.citeproc.output.Citation;
 import org.jbibtex.BibTeXDatabase;
+import org.jbibtex.BibTeXEntry;
 import org.jbibtex.BibTeXParser;
+import org.jbibtex.Key;
 import org.jbibtex.ParseException;
+import org.jbibtex.Value;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,9 +32,11 @@ import java.util.regex.Pattern;
  * <p>A page names its {@code .bib} file(s) with {@code bibliography=} – in its
  * front matter or, for a whole lecture, in a {@code meta.properties}. In the
  * text, {@code [@key]} (or {@code [@a; @b]}) cites an entry, and a line holding
- * only {@code [BIB]} becomes the list of all entries cited on that page. Both
- * are formatted with a CSL style ({@code citationStyle=}, default
- * {@value #DEFAULT_STYLE}) in the page's language, using citeproc-java.</p>
+ * only {@code [BIB]} becomes the list of all entries cited on that page. A line
+ * {@code [BIB file.bib]} instead lists <em>every</em> entry of that file, newest
+ * first – for a publication list, which cites nothing. Both are formatted with
+ * a CSL style ({@code citationStyle=}, default {@value #DEFAULT_STYLE}) in the
+ * page's language, using citeproc-java.</p>
  *
  * <p>Runs on the Markdown body while {@link MetaMerge} stages a page, so JBake
  * only ever sees finished HTML: citations become links to their entry, the
@@ -57,6 +63,11 @@ final class Bibliography {
     private static final Pattern FENCE = Pattern.compile("^ {0,3}(`{3,}|~{3,})");
     /** A line holding only [BIB]; indented 4+ it would be a code block. */
     private static final Pattern MARKER = Pattern.compile("(?m)^ {0,3}\\[BIB][ \\t]*$");
+    /** A line holding only [BIB file.bib]: the whole file, newest first. */
+    private static final Pattern FILE_MARKER =
+            Pattern.compile("(?m)^ {0,3}\\[BIB[ \\t]+([^\\]\\s]+\\.bib)][ \\t]*$");
+    private static final List<String> MONTHS = List.of("jan", "feb", "mar", "apr", "may", "jun",
+            "jul", "aug", "sep", "oct", "nov", "dec");
 
     private final Path contentDir;
 
@@ -71,6 +82,7 @@ final class Bibliography {
     String process(String body, Map<String, String> meta, Path page) throws IOException {
         List<String[]> parts = split(body);
         Set<String> cited = new LinkedHashSet<>();
+        Set<String> listed = new LinkedHashSet<>();
         boolean marker = false;
         for (String[] part : parts) {
             if (part[0] == null) continue;
@@ -78,39 +90,68 @@ final class Bibliography {
                 cited.addAll(keys(m.group(1)));
             }
             marker |= hasMarker(part[0]);
+            for (Matcher m = FILE_MARKER.matcher(part[0]); m.find(); ) {
+                listed.add(m.group(1));
+            }
         }
-        if (cited.isEmpty() && !marker) {
+        if (cited.isEmpty() && !marker && listed.isEmpty()) {
             return body;
         }
         String name = contentDir.relativize(page).toString();
         String files = meta.getOrDefault("bibliography", "").trim();
-        if (files.isEmpty()) {
+        if (files.isEmpty() && (marker || !cited.isEmpty())) {
             warn(name, "cites or uses [BIB] but no 'bibliography=' is set");
-            return body;
+            if (listed.isEmpty()) return body;
         }
 
         BibTeXItemDataProvider provider = new BibTeXItemDataProvider();
         Set<String> known = new LinkedHashSet<>();
-        for (String file : files.split(",")) {
-            Path bib = lookup(page.getParent(), file.trim());
-            if (bib == null) {
-                warn(name, "bibliography file not found: " + file.trim());
-                continue;
+        Map<Path, BibTeXDatabase> loaded = new HashMap<>();
+        if (!files.isEmpty()) {
+            for (String file : files.split(",")) {
+                Path bib = lookup(page.getParent(), file.trim());
+                if (bib == null) {
+                    warn(name, "bibliography file not found: " + file.trim());
+                    continue;
+                }
+                BibTeXDatabase db = parse(bib);
+                loaded.put(bib, db);
+                provider.addDatabase(db);
+                db.getEntries().keySet().forEach(k -> known.add(k.getValue()));
             }
-            BibTeXDatabase db = parse(bib);
-            provider.addDatabase(db);
-            db.getEntries().keySet().forEach(k -> known.add(k.getValue()));
         }
         for (String key : cited) {
             if (!known.contains(key)) warn(name, "unknown citation key @" + key);
         }
         cited.retainAll(known);
 
+        // [BIB file.bib]: every entry of that file, newest first. The file need not be
+        // named in bibliography=; one already loaded is not parsed twice.
+        Map<String, List<String>> fileKeys = new HashMap<>();
+        for (String file : listed) {
+            Path bib = lookup(page.getParent(), file);
+            if (bib == null) {
+                warn(name, "bibliography file not found: " + file);
+                fileKeys.put(file, List.of());
+                continue;
+            }
+            BibTeXDatabase db = loaded.get(bib);
+            if (db == null) {
+                db = parse(bib);
+                loaded.put(bib, db);
+                provider.addDatabase(db);
+                db.getEntries().keySet().forEach(k -> known.add(k.getValue()));
+            }
+            fileKeys.put(file, newestFirst(db));
+        }
+
         CSL csl = new CSL(provider, style(meta, page, name), locale(meta.get("lang")));
         csl.setOutputFormat("html");
         csl.setConvertLinks(true);
-        // Order of first appearance -> numbering of numeric styles.
-        csl.registerCitationItems(cited);
+        // Order of first appearance -> numbering of numeric styles; listed files follow.
+        Set<String> registered = new LinkedHashSet<>(cited);
+        fileKeys.values().forEach(registered::addAll);
+        csl.registerCitationItems(registered);
 
         StringBuilder out = new StringBuilder();
         boolean placed = false;
@@ -125,13 +166,67 @@ final class Bibliography {
                 text = MARKER.matcher(text).replaceAll(Matcher.quoteReplacement(list));
                 placed = true;
             }
+            if (!listed.isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                Matcher m = FILE_MARKER.matcher(text);
+                while (m.find()) {
+                    m.appendReplacement(sb, Matcher.quoteReplacement(
+                            listAll(csl, fileKeys.getOrDefault(m.group(1), List.of()))));
+                }
+                m.appendTail(sb);
+                text = sb.toString();
+            }
             out.append(text);
         }
         if (!placed && !cited.isEmpty()) {
             warn(name, "cites entries but has no [BIB] line for the bibliography");
         }
-        System.out.println("[bib] " + name + ": " + cited.size() + " entr" + (cited.size() == 1 ? "y" : "ies"));
+        int total = registered.size();
+        System.out.println("[bib] " + name + ": " + total + " entr" + (total == 1 ? "y" : "ies"));
         return out.toString();
+    }
+
+    /** The keys of {@code db} ordered by year and month, newest first; ties keep the file order. */
+    private static List<String> newestFirst(BibTeXDatabase db) {
+        List<String> keys = new ArrayList<>();
+        Map<String, Integer> rank = new HashMap<>();
+        for (Map.Entry<Key, BibTeXEntry> e : db.getEntries().entrySet()) {
+            String key = e.getKey().getValue();
+            keys.add(key);
+            rank.put(key, year(e.getValue()) * 100 + month(e.getValue()));
+        }
+        keys.sort(Comparator.comparing((String k) -> rank.get(k)).reversed());
+        return keys;
+    }
+
+    private static int year(BibTeXEntry entry) {
+        Value v = entry.getField(BibTeXEntry.KEY_YEAR);
+        if (v == null) return 0;
+        Matcher m = Pattern.compile("\\d{4}").matcher(v.toUserString());
+        return m.find() ? Integer.parseInt(m.group()) : 0;
+    }
+
+    private static int month(BibTeXEntry entry) {
+        Value v = entry.getField(BibTeXEntry.KEY_MONTH);
+        if (v == null) return 0;
+        String s = v.toUserString().strip().toLowerCase();
+        if (s.matches("\\d{1,2}")) return Integer.parseInt(s);
+        int i = s.length() >= 3 ? MONTHS.indexOf(s.substring(0, 3)) : -1;
+        return i < 0 ? 0 : i + 1;
+    }
+
+    /** All given entries as one HTML block in the given order, each with its anchor. */
+    private static String listAll(CSL csl, List<String> keys) {
+        if (keys.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("<div class=\"bibliography csl-bib-body\">");
+        for (String key : keys) {
+            String[] one = csl.makeBibliography(item -> item.getId().equals(key)).getEntries();
+            if (one.length != 1) continue;
+            sb.append(one[0].strip().replaceFirst("<div class=\"csl-entry\">",
+                    Matcher.quoteReplacement("<div class=\"csl-entry\" id=\"" + anchor(key) + "\">"))
+                    .replaceAll("\\s*\\n\\s*", " "));
+        }
+        return sb.append("</div>").toString();
     }
 
     /** Replaces every citation in a code-free text part. */

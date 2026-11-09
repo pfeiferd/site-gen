@@ -243,6 +243,10 @@ a:hover {
     display: block;
 }
 
+.logo-img + .logo-text {
+    margin-left: 0.55rem;
+}
+
 .logo-text {
     font-size: 1.25rem;
     font-weight: 700;

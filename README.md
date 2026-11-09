@@ -229,7 +229,8 @@ without a hyperlink. All values are UTF-8 capable.
 | `lecturerName`, `lecturerUrl`, `lecturerUrlEn` | lecturer's name in the footer + (language-dependent) link |
 | `universityName`, `universityNameEn` | university name (footer) |
 | `universityUrl`, `universityUrlEn` | target of the logo in the top left |
-| `universityLogo`, `universityLogoEn` | logo file (in `content/images/`) per language |
+| `universityLogo`, `universityLogoEn` | logo file (in `content/images/`) per language; empty = no image, the name is shown as text |
+| `universityLogoWithName` | `true` shows the name as text next to the logo image – for a symbol without lettering |
 | `facultyName`, `facultyNameEn` | faculty name; a `|` marks the line-break point in the logo (→ `<br>`) |
 | `facultyUrl`, `facultyUrlEn` | target of the faculty name |
 | `footerOrg` | one organisation in the footer instead of the lecturer – faculty, university chain. Printed verbatim, so the closing full stop (“… e.V.”) belongs into the value. |
@@ -374,11 +375,15 @@ sidebar – marks those pages in their front matter:
 topnav=02
 ```
 
-Pages with `topnav` appear in the header in that order (label: `navlabel`, else `title`)
-and are **left out of the sidebar**, so the two menus do not repeat each other. The fixed
+Pages with `topnav` appear in the header in that order (label: `navlabel`, else `title`;
+`navicon=<file>` puts an icon from `images/` in front of the label, e.g. `aperture.svg` like
+the fixed Start button) and are **left out of the sidebar**, so the two menus do not repeat
+each other. The fixed
 Start button goes away as soon as one page carries `topnav`; put it on the entry page
 instead (`topnav=01` on `de/index.md`). Only pages of the current language are shown.
-Sites without `topnav` pages are rendered exactly as before.
+Sites without `topnav` pages are rendered exactly as before. A sidebar that would be
+empty – every page of the area carries `topnav` and `sidebarLectureLinks` is off – is not
+rendered at all, so a small site can live with the top navigation alone.
 
 `sidebarTitle` in a `meta.properties` names the sidebar of that lecture ("Product info",
 "Documentation") in place of the site-wide `sidebar.lecture` text; it follows the usual
@@ -681,6 +686,11 @@ citationStyle=ieee
 
 In the text, `[@key]` or `[@a; @b]` cites, and a line holding only `[BIB]` becomes the list of
 the entries **cited on that page**, in the page's language (`de` → de-DE, otherwise en-US).
+A line `[BIB file.bib]` lists **every entry of that file**, newest first (by `year` and
+`month`, ties in file order) – for a publication list, which cites nothing; several such
+lines make several sections. The file is looked up like the others and need not be named
+in `bibliography=`; an author–year style such as `apa` suits such lists better than a
+numeric one.
 Numeric styles number the sources in order of first citation; every citation links to its
 entry. Both are rendered at build time by `Bibliography` (citeproc-java), so the page contains
 finished HTML – search, print and slides need nothing extra.

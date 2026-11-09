@@ -324,7 +324,20 @@
 </head>
 <body>
 
-<header class="site-header<#if isLecture> with-sidebar</#if>">
+<#-- Seitenmenue nur, wenn es Eintraege hat: Seiten der aktuellen Vorlesung in
+     der aktuellen Sprache ohne topnav (dieselbe Auswahl wie in lectureNav) oder
+     der Fuss mit Links in andere Bereiche. Eine Site, deren Seiten alle im
+     Top-Menue stehen, bekommt so gar keine Seitenleiste. -->
+<#assign sidebarPages = [] />
+<#list published_pages as pg>
+    <#if (pg.navgroup!"") == "docs" && (pg.lecture!"") == curLecture && (pg.lang!"de") == curLang
+         && !(pg.topnav!"")?has_content>
+        <#assign sidebarPages = sidebarPages + [pg] />
+    </#if>
+</#list>
+<#assign hasSidebar = isLecture && (sidebarPages?size gt 0 || (content.sidebarLectureLinks!"false") == "true") />
+
+<header class="site-header<#if hasSidebar> with-sidebar</#if>">
     <div class="header-inner">
         <#-- Kopfbereich ein-/ausklappen - Gegenstueck zum Seitenleisten-Umschalter.
              Steht links neben dem Logo und bleibt als einziges Element der
@@ -338,7 +351,16 @@
         </div>
         </#if>
         <div class="logo">
-            <@linked url=universityUrl urlEn=universityUrlEn class="logo-link"><img class="logo-img" src="${content.rootpath}images/${universityLogo}" alt="${universityName?html}"<#if universityLogoEn != universityLogo> data-src-en="${content.rootpath}images/${universityLogoEn}"</#if>></@linked>
+            <#-- universityLogo= (leer) in meta.properties: keine Bildmarke, der Name
+                 steht als Text - fuer Sites ohne Logo (ein leeres src ergaebe ein
+                 kaputtes Bildsymbol). -->
+            <#if universityLogo?has_content>
+            <#-- universityLogoWithName=true: Bildmarke UND Name nebeneinander (fuer
+                 ein Symbol ohne Schriftzug); sonst nur das Bild wie bisher. -->
+            <@linked url=universityUrl urlEn=universityUrlEn class="logo-link"><img class="logo-img" src="${content.rootpath}images/${universityLogo}" alt="${universityName?html}"<#if universityLogoEn != universityLogo> data-src-en="${content.rootpath}images/${universityLogoEn}"</#if>><#if (content.universityLogoWithName!"false") == "true"><span class="logo-text" data-i18n-de="${universityName?html}" data-i18n-en="${universityNameEn?html}">${universityName?html}</span></#if></@linked>
+            <#else>
+            <@linked url=universityUrl urlEn=universityUrlEn class="logo-link"><span class="logo-text" data-i18n-de="${universityName?html}" data-i18n-en="${universityNameEn?html}">${universityName?html}</span></@linked>
+            </#if>
             <@linked url=facultyUrl urlEn=facultyUrlEn class="logo-sub"><span data-i18n-en-html="${facultyLogoEn}">${facultyLogoDe}</span></@linked>
         </div>
         <nav class="main-nav" aria-label="Hauptnavigation">
@@ -346,8 +368,10 @@
                 <#if (topPages?size > 0)>
                 <#list topPages as pg>
                 <li>
+                    <#-- navicon=<datei> im Frontmatter: Symbol aus images/ vor dem Text,
+                         wie beim festen Start-Knopf (aperture.svg). -->
                     <a href="${content.rootpath}${pg.uri}"
-                       <#if (content.uri!"") == pg.uri>class="active"</#if>>${(pg.navlabel!pg.title)?html}</a>
+                       <#if (content.uri!"") == pg.uri>class="active"</#if>><#if (pg.navicon!"")?has_content><img class="main-nav-icon" src="${content.rootpath}images/${pg.navicon}" alt=""></#if>${(pg.navlabel!pg.title)?html}</a>
                 </li>
                 </#list>
                 <#else>
@@ -412,7 +436,7 @@
 </header>
 
 <div class="page-wrapper">
-    <#if isLecture>
+    <#if hasSidebar>
     <div class="sidebar-col">
     <aside class="sidebar-nav" aria-label="Navigation">
         <div class="nav-header" title="${ui('sidebar.toggle', 'Navigation ein- oder ausklappen')}" data-i18n-title="sidebar.toggle">
