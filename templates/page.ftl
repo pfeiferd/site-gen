@@ -278,7 +278,11 @@
                 <#if (hs?size > 0)>
                     <#assign relMin = 99>
                     <#list hs as h><#if (h.level < relMin)><#assign relMin = h.level></#if></#list>
-                    <#assign toc = "<nav class=\"page-toc\" aria-label=\"Inhaltsverzeichnis\"><p class=\"page-toc-title\">Inhalt</p>">
+                    <#-- Titel in der Seitensprache; per site_en.properties (toc.title, toc.aria)
+                         bzw. site_de.properties ueberschreibbar wie die uebrigen UI-Texte. -->
+                    <#assign tocTitle = ui('toc.title', (curLang == "en")?then("Contents", "Inhalt")) />
+                    <#assign tocAria  = ui('toc.aria',  (curLang == "en")?then("Table of contents", "Inhaltsverzeichnis")) />
+                    <#assign toc = "<nav class=\"page-toc\" aria-label=\"" + tocAria + "\"><p class=\"page-toc-title\">" + tocTitle + "</p>">
                     <#assign prev = 0>
                     <#list hs as h>
                         <#assign lvl = h.level - relMin + 1>

@@ -469,6 +469,10 @@ sidebar.topics=Seitenmenü         # sidebar.topics=Site menu
 
 Keys that are not listed keep the template wording, so a partial file is fine.
 
+The heading of an automatic table of contents (`[TOC]`) follows the page language
+("Inhalt" / "Contents") and can be renamed with `toc.title` and `toc.aria` (the
+`aria-label` of the list) in the same files.
+
 ### Interface state in the URL
 
 Everything the reader switches is kept in the address, not only in the browser’s storage, and
