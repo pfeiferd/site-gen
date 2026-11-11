@@ -226,7 +226,7 @@ without a hyperlink. All values are UTF-8 capable.
 
 | Key | Meaning |
 |-----|---------|
-| `lecturerName`, `lecturerUrl`, `lecturerUrlEn` | lecturer's name in the footer + (language-dependent) link |
+| `lecturerName`, `lecturerUrl`, `lecturerUrlEn` | lecturer's name in the footer + (language-dependent) link. Several lecturers: separate the names with `\|` and list their profile URLs in the same order, also `\|`-separated – each name gets its own link (a missing URL leaves that name as plain text). Usually set per lecture in `content/<lecture>/meta.properties`. |
 | `universityName`, `universityNameEn` | university name (footer) |
 | `universityUrl`, `universityUrlEn` | target of the logo in the top left |
 | `universityLogo`, `universityLogoEn` | logo file (in `content/images/`) per language; empty = no image, the name is shown as text |

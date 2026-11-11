@@ -33,7 +33,14 @@
              die Zeichensetzung am Ende ("... e.V.") gehoert in den Wert, nicht
              ins Template. -->
         <#assign fOrg = (content.footerOrg!"") />
-        &copy; ${(content.copyrightYear)!"2026"}. <#if fOrg?has_content><@linked url=lecturerUrl urlEn=lecturerUrlEn>${fOrg}</@linked><#else><@linked url=lecturerUrl urlEn=lecturerUrlEn>${lecturerName}</@linked> – <@linked url=facultyUrl urlEn=facultyUrlEn><span data-i18n-de="${facultyNameFlat?html}" data-i18n-en="${facultyNameEnFlat?html}">${facultyNameFlat}</span></@linked>, <@linked url=universityUrl urlEn=universityUrlEn><span data-i18n-de="${universityName?html}" data-i18n-en="${universityNameEn?html}">${universityName}</span></@linked>.</#if> <span data-i18n="footer.modified">${ui('footer.modified', 'Zuletzt geändert am')}</span> <span data-i18n-de="${.now?string("dd.MM.yyyy")}" data-i18n-en="${.now?string("MM/dd/yyyy")}">${.now?string("dd.MM.yyyy")}</span>.
+        <#-- Mehrere Dozenten: Namen in lecturerName mit "|" getrennt, die
+             Profilseiten in lecturerUrl (und lecturerUrlEn) in derselben
+             Reihenfolge ebenfalls mit "|" - jeder Name bekommt seinen eigenen
+             Link; fehlt eine Adresse, steht der Name als Text. -->
+        <#assign lNames  = lecturerName?split("|") />
+        <#assign lUrls   = lecturerUrl?split("|") />
+        <#assign lUrlsEn = lecturerUrlEn?split("|") />
+        &copy; ${(content.copyrightYear)!"2026"}. <#if fOrg?has_content><@linked url=lecturerUrl urlEn=lecturerUrlEn>${fOrg}</@linked><#else><#list lNames as ln><#assign lu = (lUrls[ln?index]!"")?trim /><#assign lue = (lUrlsEn[ln?index]!lu)?trim /><@linked url=lu urlEn=lue>${ln?trim}</@linked><#if !ln?is_last> | </#if></#list> – <@linked url=facultyUrl urlEn=facultyUrlEn><span data-i18n-de="${facultyNameFlat?html}" data-i18n-en="${facultyNameEnFlat?html}">${facultyNameFlat}</span></@linked>, <@linked url=universityUrl urlEn=universityUrlEn><span data-i18n-de="${universityName?html}" data-i18n-en="${universityNameEn?html}">${universityName}</span></@linked>.</#if> <span data-i18n="footer.modified">${ui('footer.modified', 'Zuletzt geändert am')}</span> <span data-i18n-de="${.now?string("dd.MM.yyyy")}" data-i18n-en="${.now?string("MM/dd/yyyy")}">${.now?string("dd.MM.yyyy")}</span>.
     </div>
 </footer>
 
