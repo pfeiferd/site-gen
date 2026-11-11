@@ -358,9 +358,10 @@
 <#if (content.math!"false") == "true">
 <#-- LaTeX/Mathe: nur auf Seiten mit math=true. MathJax ist lokal gebuendelt
      (assets/js/tex-svg.js, SVG-Ausgabe -> keine externen Fonts, kein CDN).
-     Delimiter: $...$ (inline) und $$...$$ (abgesetzt) — bewusst gewaehlt, weil sie
-     den Markdown-Parser (Flexmark) unbeschadet ueberstehen; \(...\)/\[...\] wuerden
-     durch das Backslash-Escaping zerstoert. Zusaetzlich werden ```math-Codebloecke
+     Delimiter: $...$ (inline) und $$...$$ (abgesetzt); \(...\)/\[...\] wuerden
+     durch das Backslash-Escaping zerstoert. Den Inhalt von $...$ schuetzt die
+     Build-Klasse InlineMath beim Staging vor Flexmark (Emphasis durch _ und *,
+     Backslash-Escapes wie \{). Zusaetzlich werden ```math-Codebloecke
      (verbatim, damit markdown-sicher) in abgesetzte Formeln umgewandelt. -->
 <script>
 (function () {

@@ -32,7 +32,9 @@ import java.util.stream.Stream;
  * </ol>
  *
  * <p>While staging, {@link Bibliography} turns citations ({@code [@key]}) and a
- * {@code [BIB]} line into HTML for pages that set {@code bibliography}.</p>
+ * {@code [BIB]} line into HTML for pages that set {@code bibliography}, and
+ * {@link InlineMath} escapes {@code $...$} formulas on pages with
+ * {@code math=true} so that Flexmark passes them through unchanged.</p>
  *
  * <p>Only Markdown files are staged (JBake reads only those from the content
  * folder); images and {@code meta.properties} stay in the real {@code content/}
@@ -132,6 +134,11 @@ public final class MetaMerge {
 
         // Zitate [@key] und [BIB] in fertiges HTML umsetzen (siehe Bibliography).
         String body = bibliography.process(split[1], merged, file);
+        // Inline-Formeln ($...$) vor Flexmark schuetzen (Emphasis, Backslash-Escapes),
+        // siehe InlineMath. Nur auf Mathe-Seiten, sonst bleibt "$" gewoehnlicher Text.
+        if ("true".equalsIgnoreCase(String.valueOf(merged.get("math")).trim())) {
+            body = InlineMath.protect(body);
+        }
 
         StringBuilder out = new StringBuilder();
         for (Map.Entry<String, String> e : merged.entrySet()) {
