@@ -365,10 +365,33 @@
      (verbatim, damit markdown-sicher) in abgesetzte Formeln umgewandelt. -->
 <script>
 (function () {
+    // Zeilenumbrueche: MathJax ignoriert "\\" auf oberster Ebene einer Formel
+    // (nur in Umgebungen wie aligned/cases/array ist es ein Umbruch). Ein
+    // ```math-Block mit solchen "\\" wird deshalb in \begin{aligned} ...
+    // \end{aligned} gepackt: jede Zeile linksbuendig (&), Einrueckungen per
+    // \qquad bleiben erhalten. Bloecke, die selbst mit \begin{ anfangen, bleiben
+    // unveraendert.
+    function breakLines(tex) {
+        if (/^\s*\\begin\{/.test(tex)) return tex;
+        var depth = 0, lines = [], cur = '', i;
+        for (i = 0; i < tex.length; i++) {
+            if (tex.charAt(i) === '\\') {
+                if (tex.substr(i, 7) === '\\begin{') depth++;
+                else if (tex.substr(i, 5) === '\\end{') depth--;
+                else if (depth === 0 && tex.charAt(i + 1) === '\\') { lines.push(cur); cur = ''; i++; continue; }
+                cur += tex.substr(i, 2); i++; continue;   // Escape-Paar (\\, \{, ...) zusammenhalten
+            }
+            cur += tex.charAt(i);
+        }
+        lines.push(cur);
+        lines = lines.filter(function (l) { return l.trim() !== ''; });
+        if (lines.length < 2) return tex;
+        return '\\begin{aligned}' + lines.map(function (l) { return '&' + l.trim(); }).join(' \\\\ ') + '\\end{aligned}';
+    }
     document.querySelectorAll('pre > code.language-math').forEach(function (code) {
         var div = document.createElement('div');
         div.className = 'math-block';
-        div.textContent = '$$' + code.textContent.replace(/\n+$/, '') + '$$';
+        div.textContent = '$$' + breakLines(code.textContent.replace(/\n+$/, '')) + '$$';
         code.parentNode.replaceWith(div);
     });
     window.MathJax = {

@@ -2074,18 +2074,22 @@ html[data-theme="dark"] .hljs-strong { color: #c9d1d9; }
 }
 
 /* ---- LaTeX / Mathe (MathJax) ------------------------------------------- */
-/* Abgesetzte Formeln zentriert, mit Platz darum; breite Formeln scrollen
-   horizontal statt das Layout zu sprengen. Inline-Formeln bleiben im Textfluss. */
+/* Abgesetzte Formeln zentriert, mit Platz darum. Eine Formel, die breiter als
+   die Spalte ist, wird verkleinert statt zu scrollen: MathJax gibt ein SVG mit
+   viewBox aus, max-width/height:auto skalieren es proportional. Im Inhalt
+   sollten solche Formeln trotzdem mit \\ umbrochen werden; die Skalierung ist
+   nur das Sicherheitsnetz. Inline-Formeln bleiben im Textfluss. */
 .math-block {
     margin: 1.1em 0;
     text-align: center;
-    overflow-x: auto;
-    overflow-y: hidden;
 }
 mjx-container[display="true"] {
     margin: 1.1em 0 !important;
-    overflow-x: auto;
-    overflow-y: hidden;
+    max-width: 100%;
+}
+mjx-container[display="true"] > svg {
+    max-width: 100%;
+    height: auto;
 }
 
 /* ---- Syntax-Highlighting (highlight.js) -------------------------------- */
