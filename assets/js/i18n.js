@@ -281,7 +281,13 @@
         /* Gibt es die Vorlesung in dieser Sprache als eigene Seite -> dorthin
            wechseln (mit vollem Zustand). Sonst nur die Oberflaeche uebersetzen. */
         if (this.getAttribute('data-nav') === 'true') {
-            window.location.href = decorate(this.getAttribute('data-href'), lang);
+            var target = decorate(this.getAttribute('data-href'), lang);
+            /* Die gerade betrachtete Folie mitnehmen (#slide-N, siehe footer.ftl):
+               beide Sprachfassungen einer Seite haben dieselbe Folienfolge, der
+               Leser landet also auf derselben Folie statt am Seitenanfang. */
+            var n = (typeof window.__currentSlide === 'function') ? window.__currentSlide() : 0;
+            if (n > 1 && target.indexOf('#') === -1) target += '#slide-' + n;
+            window.location.href = target;
             return;
         }
         applyLang(lang);

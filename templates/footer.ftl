@@ -288,7 +288,7 @@
     var current = 0;
     function multi() { return slides.length > 1; }
 
-    function showSlide(i) {
+    function showSlide(i, byUser) {
         if (!slides.length) return;
         current = Math.max(0, Math.min(i, slides.length - 1));
         slides.forEach(function (s, k) { s.classList.toggle('active', k === current); });
@@ -296,7 +296,27 @@
         if (prevBtn) prevBtn.disabled = current === 0;
         if (nextBtn) nextBtn.disabled = current === slides.length - 1;
         if (html.classList.contains('mode-slides')) { try { window.scrollTo(0, 0); } catch (e) {} }
+        /* Vom Benutzer angesteuerte Folie in der Adresse festhalten (#slide-N, ohne
+           neuen Verlaufseintrag): ueberlebt Neuladen und wird beim Sprachwechsel
+           (i18n.js, __currentSlide) an die andere Sprachfassung weitergereicht. */
+        if (byUser) {
+            try { history.replaceState(history.state, '', location.pathname + location.search + '#slide-' + (current + 1)); } catch (e) {}
+        }
     }
+
+    /* Nummer (1-basiert) der Folie, die der Leser gerade vor sich hat: im
+       Slide-Modus die aktive, in der Dokumentansicht die oberste im Sichtfenster.
+       0 = nicht bestimmbar. Genutzt vom Sprachumschalter in i18n.js. */
+    function currentSlide() {
+        if (!slides.length) return 0;
+        if (html.classList.contains('mode-slides')) return current + 1;
+        var limit = (window.innerHeight || 800) * 0.35, best = 1;
+        for (var k = 0; k < slides.length; k++) {
+            if (slides[k].getBoundingClientRect().top <= limit) best = k + 1; else break;
+        }
+        return best;
+    }
+    window.__currentSlide = currentSlide;
 
     function setMode(slidesOn) {
         html.classList.toggle('mode-slides', slidesOn);
@@ -319,14 +339,14 @@
             setMode(b.getAttribute('data-view') === 'slides');
         });
     });
-    if (prevBtn) prevBtn.addEventListener('click', function () { showSlide(current - 1); });
-    if (nextBtn) nextBtn.addEventListener('click', function () { showSlide(current + 1); });
+    if (prevBtn) prevBtn.addEventListener('click', function () { showSlide(current - 1, true); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { showSlide(current + 1, true); });
 
     document.addEventListener('keydown', function (e) {
         if (!html.classList.contains('mode-slides')) return;
         if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-        if (e.key === 'ArrowRight' || e.key === 'PageDown')      { e.preventDefault(); showSlide(current + 1); }
-        else if (e.key === 'ArrowLeft' || e.key === 'PageUp')    { e.preventDefault(); showSlide(current - 1); }
+        if (e.key === 'ArrowRight' || e.key === 'PageDown')      { e.preventDefault(); showSlide(current + 1, true); }
+        else if (e.key === 'ArrowLeft' || e.key === 'PageUp')    { e.preventDefault(); showSlide(current - 1, true); }
     });
 
     /* Sprung-Links (TOC/Anker): die Folie mit dem Ziel aktivieren. */
@@ -346,6 +366,10 @@
         if (sl) {
             var idx = slides.indexOf(sl);
             if (idx >= 0) { showSlide(idx); if (el.scrollIntoView) el.scrollIntoView(); }
+        } else if (/^slide-\d+$/.test(id) && slides.length) {
+            /* #slide-N jenseits der letzten Folie (die andere Sprachfassung hat
+               mehr Folien): auf der letzten Folie bleiben statt am Anfang. */
+            showSlide(slides.length - 1);
         }
     }
     window.addEventListener('hashchange', goToHash);
@@ -353,6 +377,20 @@
     /* Initialzustand (mode-slides evtl. schon durch das Kopf-Skript gesetzt). */
     setMode(html.classList.contains('mode-slides'));
     goToHash();
+
+    /* #slide-N in der Dokumentansicht: der Browser springt zwar beim Laden zum
+       Anker, doch Bilder und MathJax verschieben das Layout danach noch. Deshalb
+       nach dem Laden (und nach dem Formelsatz) noch einmal zur Folie scrollen. */
+    function settleSlideHash() {
+        var m = /^#slide-(\d+)$/.exec(location.hash || '');
+        if (!m || html.classList.contains('mode-slides')) return;
+        var el = document.getElementById('slide-' + m[1]) || slides[slides.length - 1];
+        if (el && el.scrollIntoView) el.scrollIntoView();
+    }
+    window.addEventListener('load', function () {
+        var p = window.MathJax && MathJax.startup && MathJax.startup.promise;
+        if (p && p.then) p.then(settleSlideHash, settleSlideHash); else settleSlideHash();
+    });
 }());
 </script>
 <#if (content.math!"false") == "true">

@@ -384,7 +384,10 @@
             <#list allSlides as s><#if s?trim?length gt 0><#assign slides = slides + [s]></#if></#list>
             <div class="page-article-body">
                 <#list slides as s>
-                <section class="slide">
+                <#-- id="slide-N": sprachunabhaengiger Anker (de- und en-Fassung einer Seite
+                     haben dieselbe Folienfolge). Der Sprachumschalter (i18n.js) und die
+                     Folien-Navigation (footer.ftl) fuehren darueber die aktuelle Folie mit. -->
+                <section class="slide" id="slide-${s?index + 1}">
                     <div class="slide-inner">${s}</div>
                     <footer class="slide-print-footer">
                         <span class="slide-footer-title"><#if isLecture>${curTitle}<#if (content.title)?has_content> &ndash; ${content.title}</#if></#if></span>
