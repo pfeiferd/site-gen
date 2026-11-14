@@ -489,6 +489,12 @@
 <#if (hasQuiz!false)>
 <script src="${content.rootpath}js/quiz.js?v=${.now?long?c}"></script>
 </#if>
+<#-- SQL-Bloecke (```sql-db/```sql-query, siehe page.ftl): nur dann das kleine
+     Steuerskript laden. PGlite selbst (js/pglite/, einige MB) holt sqlrun.js erst,
+     wenn jemand einen SQL-Editor benutzt. -->
+<#if (hasSql!false)>
+<script src="${content.rootpath}js/sqlrun.js?v=${.now?long?c}"></script>
+</#if>
 <#-- Karten (Leaflet, lokal gebuendelt) nur auf Seiten laden, die eine haben.
      page.ftl setzt hasMap, wenn es einen ```map-Block umgewandelt hat. -->
 <#if (hasMap!false)>

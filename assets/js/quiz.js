@@ -20,14 +20,14 @@
             wrong: 'Leider falsch.', partial: 'Nicht ganz – die richtigen Antworten sind grün markiert.',
             none: 'Bitte zuerst eine Antwort wählen.', multi: '(mehrere Antworten möglich)',
             empty: 'Bitte zuerst eine Antwort eingeben.', solution: 'Richtige Antwort:',
-            placeholder: 'Antwort, z.B. 3/4 oder 0,75'
+            placeholder: 'Antwort, z.B. 3/4 oder 0,75', placeholderText: 'Antwort eingeben'
         },
         en: {
             check: 'Check', retry: 'Try again', correct: 'Correct!',
             wrong: 'Unfortunately wrong.', partial: 'Not quite – the correct answers are marked green.',
             none: 'Please choose an answer first.', multi: '(several answers possible)',
             empty: 'Please enter an answer first.', solution: 'Correct answer:',
-            placeholder: 'Answer, e.g. 3/4 or 0.75'
+            placeholder: 'Answer, e.g. 3/4 or 0.75', placeholderText: 'Enter your answer'
         }
     };
 
@@ -71,7 +71,11 @@
 
     function label(q) {
         var inp = q.querySelector('.quiz-input');
-        if (inp) { inp.placeholder = t('placeholder'); inp.setAttribute('aria-label', t('placeholder')); }
+        if (inp) {
+            /* Zahlenhinweis nur, wenn die erste akzeptierte Antwort eine Zahl/ein Bruch ist */
+            var ph = num(firstAnswer(inp.getAttribute('data-answers') || '').split(/±|\+-|\+\/-/)[0]) !== null ? t('placeholder') : t('placeholderText');
+            inp.placeholder = ph; inp.setAttribute('aria-label', ph);
+        }
         var btn = q.querySelector('.quiz-check');
         if (btn) btn.textContent = q.classList.contains('quiz-done') ? t('retry') : t('check');
         var hint = q.querySelector('.quiz-multi');

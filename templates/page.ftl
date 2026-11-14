@@ -346,6 +346,71 @@
                 <#assign body = body?replace(qm?groups[0], '<div class="quiz">'
                     + quizTitle?has_content?then('<p class="quiz-title">' + quizTitle + '</p>', '') + quizOut + '</div>', "f")>
             </#list>
+            <#-- SQL im Browser (PostgreSQL via PGlite, js/sqlrun.js laedt es erst bei
+                 Gebrauch nach).
+                 ```sql-db     Skript, das eine Datenbank aufbaut (CREATE TABLE, INSERT …).
+                               Erscheint als aufklappbares Listing. Kopfzeilen davor:
+                                 name: uni        Name der Datenbank (ohne: Standard-DB)
+                                 show: open|none  aufgeklappt bzw. gar nicht anzeigen
+                               Mehrere Bloecke gleichen Namens werden aneinandergehaengt.
+                 ```sql-query  Editor mit Startanfrage. Kopfzeilen davor:
+                                 db: uni          Datenbank (ohne: Standard-DB)
+                                 title: Aufgabe   Ueberschrift (optional)
+                               Nach einer Zeile "solution:" folgt die Musterloesung; dann
+                               wird jedes Ergebnis mit ihr verglichen und es gibt
+                               "Loesung zeigen". -->
+            <#assign hasSql = false>
+            <#list body?matches('<pre><code class="language-sql-db">(.*?)</code></pre>', "s") as dm>
+                <#assign hasSql = true>
+                <#assign sName = ""><#assign sShow = "closed"><#assign sCode = ""><#assign sHead = true>
+                <#list dm?groups[1]?split("\n") as rawLine>
+                    <#assign dirM = rawLine?trim?matches("^(name|show):\\s*(.*)$", "i")>
+                    <#if sHead && dirM>
+                        <#if dirM?groups[1]?lower_case == "name"><#assign sName = dirM?groups[2]?trim>
+                        <#else><#assign sShow = dirM?groups[2]?trim?lower_case></#if>
+                    <#elseif sHead && !rawLine?trim?has_content>
+                    <#else>
+                        <#assign sHead = false>
+                        <#assign sCode = sCode + rawLine + "\n">
+                    </#if>
+                </#list>
+                <#assign body = body?replace(dm?groups[0], '<div class="sqldb" data-db="' + sName?replace('"', '&quot;') + '"'
+                    + (sShow == "none")?then(' hidden', '') + '><details' + (sShow == "open")?then(' open', '')
+                    + '><summary>Datenbank</summary><pre><code class="language-sql">' + sCode?trim + '</code></pre></details></div>', "f")>
+            </#list>
+            <#list body?matches('<pre><code class="language-sql-query">(.*?)</code></pre>', "s") as sm>
+                <#assign hasSql = true>
+                <#assign qDb = ""><#assign qTitle = ""><#assign qStart = ""><#assign qSol = "">
+                <#assign inSol = false><#assign sHead = true>
+                <#list sm?groups[1]?split("\n") as rawLine>
+                    <#assign tl = rawLine?trim>
+                    <#assign dirM = tl?matches("^(db|title):\\s*(.*)$", "i")>
+                    <#if sHead && dirM>
+                        <#if dirM?groups[1]?lower_case == "db"><#assign qDb = dirM?groups[2]?trim>
+                        <#else><#assign qTitle = quizFmt(dirM?groups[2]?trim)></#if>
+                    <#elseif sHead && !tl?has_content>
+                    <#elseif tl?lower_case == "solution:">
+                        <#assign inSol = true><#assign sHead = false>
+                    <#else>
+                        <#assign sHead = false>
+                        <#if inSol><#assign qSol = qSol + rawLine + "\n"><#else><#assign qStart = qStart + rawLine + "\n"></#if>
+                    </#if>
+                </#list>
+                <#assign qStart = qStart?trim><#assign qSol = qSol?trim>
+                <#assign qRows = qStart?split("\n")?size + 1>
+                <#if (qRows < 4)><#assign qRows = 4></#if>
+                <#if (qRows > 16)><#assign qRows = 16></#if>
+                <#assign body = body?replace(sm?groups[0], '<div class="sqlq" data-db="' + qDb?replace('"', '&quot;') + '">'
+                    + qTitle?has_content?then('<p class="sqlq-title">' + qTitle + '</p>', '')
+                    + '<textarea class="sqlq-editor" rows="' + qRows?c + '" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="SQL">' + qStart + '</textarea>'
+                    + '<div class="sqlq-actions"><button type="button" class="sqlq-run">Ausführen</button>'
+                    + '<button type="button" class="sqlq-reset">Zurücksetzen</button>'
+                    + qSol?has_content?then('<button type="button" class="sqlq-show">Lösung zeigen</button>', '')
+                    + '<span class="sqlq-status" aria-live="polite"></span></div>'
+                    + '<p class="sqlq-feedback" aria-live="polite"></p>'
+                    + qSol?has_content?then('<pre class="sqlq-solution" hidden><code class="language-sql">' + qSol + '</code></pre>', '')
+                    + '<div class="sqlq-out"></div></div>', "f")>
+            </#list>
             <#-- Gleichlautende Ueberschriften (z.B. zweimal "Uebungsaufgabe") bekommen von
                  Flexmark dieselbe id. Damit Anker, Inhaltsverzeichnis und Nummerierung sie
                  unterscheiden, erhalten Wiederholungen ein Suffix (-2, -3, ...). Jede Ueberschrift

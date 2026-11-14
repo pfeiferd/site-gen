@@ -146,6 +146,10 @@ assets/                      generic UI files (CSS, JS, UI icons)
   css/highlight.css          colour scheme for syntax highlighting
   js/lunr.min.js             full-text search
   js/leaflet.js, css/leaflet.css   locally bundled Leaflet (maps)
+  js/quiz.js                 self-check quizzes (```quiz), loaded only on pages with a quiz
+  js/sqlrun.js               SQL editors (```sql-db, ```sql-query), loaded only on pages with one
+  js/pglite/                 locally bundled PGlite 0.5.16 (PostgreSQL as WebAssembly, Apache-2.0);
+                             fetched by sqlrun.js only when a reader uses an SQL editor
 src/main/java/de/hshn/lectures/build/   the build tools (see below)
 src/main/resources/csl/      bundled citation styles (CSL)
 jbake.properties             JBake configuration
