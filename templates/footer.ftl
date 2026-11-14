@@ -334,9 +334,34 @@
         if (window.__syncUrl) window.__syncUrl();
     }
 
+    /* Folie N in der Dokumentansicht an den oberen Rand holen (ohne die
+       Gleitanimation von scroll-behavior:smooth; scroll-padding-top beachtet). */
+    function scrollToSlide(n) {
+        var el = slides[n - 1];
+        if (!el) return;
+        try { el.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (e) { el.scrollIntoView(); }
+    }
+    function setSlideHash(n) {
+        try {
+            history.replaceState(history.state, '', location.pathname + location.search + (n > 1 ? '#slide-' + n : ''));
+        } catch (e) {}
+    }
+
+    /* Ansicht wechseln und dabei auf derselben Folie bleiben: Dokument -> Folien
+       zeigt die Folie, die oben im Sichtfenster stand; Folien -> Dokument scrollt
+       zur zuletzt gezeigten Folie. Die Position landet als #slide-N in der Adresse. */
     btns.forEach(function (b) {
         b.addEventListener('click', function () {
-            setMode(b.getAttribute('data-view') === 'slides');
+            var toSlides = b.getAttribute('data-view') === 'slides';
+            if (toSlides === html.classList.contains('mode-slides')) return;
+            var n = currentSlide() || 1;
+            setMode(toSlides);
+            if (toSlides) {
+                showSlide(n - 1, true);
+            } else {
+                scrollToSlide(n);
+                setSlideHash(n);
+            }
         });
     });
     if (prevBtn) prevBtn.addEventListener('click', function () { showSlide(current - 1, true); });
@@ -391,6 +416,25 @@
         var p = window.MathJax && MathJax.startup && MathJax.startup.promise;
         if (p && p.then) p.then(settleSlideHash, settleSlideHash); else settleSlideHash();
     });
+
+    /* Dokumentansicht: die oberste sichtbare Folie beim Scrollen als #slide-N in
+       der Adresse mitfuehren (ohne Verlaufseintrag). So behalten Neuladen,
+       kopierte Links und der Sprachwechsel die Position. Ein Sprung ueber einen
+       Ueberschriften-Anker (#abschnitt) wird erst ueberschrieben, wenn danach
+       weitergescrollt wird. */
+    var scrollTimer = null, lastAnchorJump = 0;
+    window.addEventListener('hashchange', function () { lastAnchorJump = Date.now(); });
+    window.addEventListener('scroll', function () {
+        if (html.classList.contains('mode-slides') || !slides.length) return;
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(function () {
+            if (Date.now() - lastAnchorJump < 1500) return;
+            var n = currentSlide();
+            var want = n > 1 ? '#slide-' + n : '';
+            var cur = location.hash || '';
+            if (cur !== want && (cur === '' || /^#slide-\d+$/.test(cur) || Date.now() - lastAnchorJump >= 1500)) setSlideHash(n);
+        }, 250);
+    }, { passive: true });
 }());
 </script>
 <#if (content.math!"false") == "true">

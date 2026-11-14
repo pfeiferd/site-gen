@@ -268,6 +268,20 @@
                 <#assign cards = cards + "</div>">
                 <#assign body = body?replace("<p>[LECTURES]</p>", cards)>
             </#if>
+            <#-- Gleichlautende Ueberschriften (z.B. zweimal "Uebungsaufgabe") bekommen von
+                 Flexmark dieselbe id. Damit Anker, Inhaltsverzeichnis und Nummerierung sie
+                 unterscheiden, erhalten Wiederholungen ein Suffix (-2, -3, ...). Jede Ueberschrift
+                 wird einzeln ("f" = nur erstes Vorkommen) ersetzt und dabei voruebergehend
+                 markiert, damit die naechste Ersetzung die naechste Wiederholung trifft. -->
+            <#assign seenIds = {}>
+            <#list body?matches("<h([123])><a href=\"#([^\"]*)\" id=\"([^\"]+)\"></a>(.*?)</h\\1>") as m>
+                <#assign hid = m?groups[3]>
+                <#assign cnt = (seenIds[hid]!0) + 1>
+                <#assign seenIds = seenIds + {hid: cnt}>
+                <#assign newId = (cnt > 1)?then(hid + "-" + cnt?c, hid)>
+                <#assign body = body?replace(m?groups[0], "<h" + m?groups[1] + "><a data-hdup=\"1\" href=\"#" + newId + "\" id=\"" + newId + "\"></a>" + m?groups[4] + "</h" + m?groups[1] + ">", "f")>
+            </#list>
+            <#assign body = body?replace(" data-hdup=\"1\"", "")>
             <#if body?contains("<p>[TOC]</p>")>
                 <#-- Inhaltsverzeichnis automatisch aus den Ueberschriften nach dem Marker bauen. -->
                 <#assign afterMarker = body?split("<p>[TOC]</p>")[1]>
@@ -334,7 +348,7 @@
                             <#assign num = c1?c + "." + c2?c + "." + c3?c>
                         </#if>
                         <#assign numbered = "<h" + h.level?c + "><a href=\"#" + h.id + "\" id=\"" + h.id + "\"></a><span class=\"heading-num\">" + num + "</span> " + h.text + "</h" + h.level?c + ">">
-                        <#assign body = body?replace(h.full, numbered)>
+                        <#assign body = body?replace(h.full, numbered, "f")>
                     </#list>
                 </#if>
             </#if>
