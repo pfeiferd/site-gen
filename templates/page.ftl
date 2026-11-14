@@ -268,6 +268,84 @@
                 <#assign cards = cards + "</div>">
                 <#assign body = body?replace("<p>[LECTURES]</p>", cards)>
             </#if>
+            <#-- Quiz zur Selbstkontrolle: ein ```quiz-Block wird zu Fragen mit
+                 Antwortoptionen; js/quiz.js prueft die Auswahl im Browser.
+                   title: Ueberschrift des Quiz (optional, vor der ersten Frage)
+                   ? Fragetext            beginnt eine Frage (Folgezeilen ohne
+                                          Praefix verlaengern sie, solange noch
+                                          keine Option kam)
+                   - [x] richtige Option   / - [ ] falsche Option
+                   > Erklaerung            erscheint nach dem Pruefen (mehrere
+                                          Zeilen werden aneinandergehaengt)
+                   = Antwort              Eingabefrage statt Optionen: jede
+                                          "="-Zeile (oder "a | b" in einer Zeile)
+                                          ist eine akzeptierte Antwort. Zahlen und
+                                          Brueche werden numerisch verglichen
+                                          (3/4 = 0,75 = 0.75), "= 0,971 ± 0,001"
+                                          erlaubt eine Toleranz; Text wird ohne
+                                          Gross-/Kleinschreibung verglichen.
+                 Ist mehr als eine Option richtig, wird die Frage zur Mehrfachauswahl
+                 (Checkboxen), sonst Einfachauswahl (Radiobuttons). **fett** und
+                 `code` werden ausgewertet, $...$-Formeln setzt MathJax. Die Loesung
+                 steht als data-ok im HTML - gedacht ist das Quiz zur Selbstkontrolle,
+                 nicht fuer bewertete Tests. -->
+            <#function quizFmt s>
+                <#return s?replace("\\*\\*(.+?)\\*\\*", "<strong>$1</strong>", "r")?replace("`([^`]+)`", "<code>$1</code>", "r")>
+            </#function>
+            <#macro quizFlush>
+                <#if qText?has_content || qOpts?has_content || qAns?has_content>
+                    <#assign qNo = qNo + 1>
+                    <#assign qType = (qOk > 1)?then("checkbox", "radio")>
+                    <#assign quizOut = quizOut
+                        + '<div class="quiz-q" data-multi="' + (qOk > 1)?c + '"' + (!qOpts?has_content && qAns?has_content)?then(' data-input="true"', '') + '>'
+                        + '<p class="quiz-question"><span class="quiz-no">' + qNo?c + '.</span> ' + qText + '</p>'
+                        + (!qOpts?has_content && qAns?has_content)?then(
+                            '<p class="quiz-answer"><input type="text" class="quiz-input" autocomplete="off" spellcheck="false"'
+                          + ' aria-label="Antwort" data-answers="' + qAns?replace('"', '&quot;') + '"></p>',
+                            '<ul class="quiz-options">' + qOpts?replace("__TYPE__", qType)?replace("__NAME__", "quiz" + quizNo?c + "-" + qNo?c) + '</ul>')
+                        + '<div class="quiz-actions"><button type="button" class="quiz-check">Prüfen</button>'
+                        + '<span class="quiz-feedback" aria-live="polite"></span></div>'
+                        + qExpl?has_content?then('<div class="quiz-explain" hidden>' + qExpl + '</div>', '')
+                        + '</div>'>
+                </#if>
+                <#assign qText = ""><#assign qOpts = ""><#assign qOk = 0><#assign qExpl = ""><#assign qAns = "">
+            </#macro>
+            <#assign quizNo = 0>
+            <#assign hasQuiz = false>
+            <#list body?matches('<pre><code class="language-quiz">(.*?)</code></pre>', "s") as qm>
+                <#assign quizNo = quizNo + 1>
+                <#assign hasQuiz = true>
+                <#assign quizOut = ""><#assign quizTitle = ""><#assign qNo = 0>
+                <#assign qText = ""><#assign qOpts = ""><#assign qOk = 0><#assign qExpl = ""><#assign qAns = "">
+                <#list qm?groups[1]?split("\n") as rawLine>
+                    <#assign line = rawLine?trim>
+                    <#if !line?has_content><#continue></#if>
+                    <#assign optM = line?matches("^[-*]\\s*\\[([ xX])\\]\\s*(.*)$")>
+                    <#if line?lower_case?starts_with("title:") && quizOut == "" && !qText?has_content>
+                        <#assign quizTitle = quizFmt(line?substring(6)?trim)>
+                    <#elseif line?starts_with("?")>
+                        <@quizFlush/>
+                        <#assign qText = quizFmt(line?substring(1)?trim)>
+                    <#elseif optM>
+                        <#assign isOk = optM?groups[1]?lower_case == "x">
+                        <#if isOk><#assign qOk = qOk + 1></#if>
+                        <#assign qOpts = qOpts + '<li><label><input type="__TYPE__" name="__NAME__"'
+                            + isOk?then(' data-ok="1"', '') + '> <span>' + quizFmt(optM?groups[2]) + '</span></label></li>'>
+                    <#elseif line?starts_with("=")>
+                        <#assign qAns = qAns + qAns?has_content?then(" | ", "") + line?substring(1)?trim>
+                    <#elseif line?starts_with("&gt;") || line?starts_with(">")>
+                        <#assign rest = line?starts_with("&gt;")?then(line?substring(4), line?substring(1))?trim>
+                        <#assign qExpl = qExpl + qExpl?has_content?then(" ", "") + quizFmt(rest)>
+                    <#elseif !qOpts?has_content>
+                        <#assign qText = qText + " " + quizFmt(line)>
+                    <#else>
+                        <#assign qExpl = qExpl + qExpl?has_content?then(" ", "") + quizFmt(line)>
+                    </#if>
+                </#list>
+                <@quizFlush/>
+                <#assign body = body?replace(qm?groups[0], '<div class="quiz">'
+                    + quizTitle?has_content?then('<p class="quiz-title">' + quizTitle + '</p>', '') + quizOut + '</div>', "f")>
+            </#list>
             <#-- Gleichlautende Ueberschriften (z.B. zweimal "Uebungsaufgabe") bekommen von
                  Flexmark dieselbe id. Damit Anker, Inhaltsverzeichnis und Nummerierung sie
                  unterscheiden, erhalten Wiederholungen ein Suffix (-2, -3, ...). Jede Ueberschrift

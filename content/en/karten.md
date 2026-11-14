@@ -13,8 +13,8 @@ configure the map, every other line is one pin:
 
 ```map
 height: 340
-49.1469, 9.2166 | Bildungscampus | Bildungscampus 13; 74076 Heilbronn
-49.1225, 9.2108 | Campus Sontheim | Max-Planck-Straße 39; 74081 Heilbronn
+48.7840, 9.1817 | Stuttgart main station | Arnulf-Klett-Platz 2; 70173 Stuttgart
+49.4106, 8.7153 | Heidelberg Castle | Schlosshof 1; 69117 Heidelberg
 ```
 
 A pin line reads
@@ -45,7 +45,7 @@ kept in `content/data/<name>.json`. The map picks them up with `data: <name>`:
 
 ```map
 height: 360
-data: hochschulorte
+data: orte
 filter: ort | Standort | Location
 search: Name oder Ort | Name or town
 list: true
@@ -76,12 +76,12 @@ else is optional:
 ```json
 [
   {
-    "lat": 49.1469, "lon": 9.2166,
-    "title": "Bildungscampus",
-    "subtitle": "Heilbronn University",
-    "lines": ["Bildungscampus 13", "74076 Heilbronn"],
+    "lat": 49.1427, "lon": 9.2190,
+    "title": "Heilbronn Town Hall",
+    "subtitle": "Sight",
+    "lines": ["Marktplatz 7", "74072 Heilbronn"],
     "ort": "Heilbronn",
-    "href": "https://www.hs-heilbronn.de", "hrefText": "hs-heilbronn.de"
+    "href": "https://en.wikipedia.org/wiki/Heilbronn", "hrefText": "Wikipedia"
   }
 ]
 ```

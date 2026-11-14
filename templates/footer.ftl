@@ -485,6 +485,10 @@
 </script>
 <script src="${content.rootpath}js/tex-svg.js" id="MathJax-script" async></script>
 </#if>
+<#-- Quiz zur Selbstkontrolle (```quiz, siehe page.ftl) nur auf Seiten laden, die eins haben. -->
+<#if (hasQuiz!false)>
+<script src="${content.rootpath}js/quiz.js?v=${.now?long?c}"></script>
+</#if>
 <#-- Karten (Leaflet, lokal gebuendelt) nur auf Seiten laden, die eine haben.
      page.ftl setzt hasMap, wenn es einen ```map-Block umgewandelt hat. -->
 <#if (hasMap!false)>

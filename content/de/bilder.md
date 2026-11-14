@@ -113,7 +113,7 @@ Bildunterschrift. Ein Klick auf eine Miniatur öffnet sie in der Vollansicht.
 ```gallery
 beispiel.svg  | Ein Beispielbild
 feather.svg   | Das Icon dieser Vorlesung
-hhn-logo.png  | Logo der Hochschule
+logo.svg      | Logo der Site
 favicon.png   | Favicon der Seite
 ```
 

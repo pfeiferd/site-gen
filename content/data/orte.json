@@ -1,0 +1,42 @@
+[
+ {
+  "lat": 49.1427,
+  "lon": 9.219,
+  "title": "Rathaus Heilbronn",
+  "subtitle": "Sehenswürdigkeit",
+  "lines": [
+   "Marktplatz 7",
+   "74072 Heilbronn"
+  ],
+  "href": "https://de.wikipedia.org/wiki/Rathaus_Heilbronn",
+  "hrefText": "Wikipedia",
+  "ort": "Heilbronn",
+  "ort_en": "Heilbronn"
+ },
+ {
+  "lat": 49.4106,
+  "lon": 8.7153,
+  "title": "Heidelberger Schloss",
+  "subtitle": "Sehenswürdigkeit",
+  "lines": [
+   "Schlosshof 1",
+   "69117 Heidelberg"
+  ],
+  "href": "https://de.wikipedia.org/wiki/Heidelberger_Schloss",
+  "hrefText": "Wikipedia",
+  "ort": "Heidelberg",
+  "ort_en": "Heidelberg"
+ },
+ {
+  "lat": 48.784,
+  "lon": 9.1817,
+  "title": "Stuttgart Hauptbahnhof",
+  "subtitle": "Bahnhof",
+  "lines": [
+   "Arnulf-Klett-Platz 2",
+   "70173 Stuttgart"
+  ],
+  "ort": "Stuttgart",
+  "ort_en": "Stuttgart"
+ }
+]

@@ -50,12 +50,12 @@ Result:
 A link is made from the text in square brackets and the target in round brackets:
 
 ```
-More at [Heilbronn University](https://www.hs-heilbronn.de).
+More on [Wikipedia](https://en.wikipedia.org).
 ```
 
-Result: More at [Heilbronn University](https://www.hs-heilbronn.de).
+Result: More on [Wikipedia](https://en.wikipedia.org).
 
-To open an external link in a new tab, write it as plain HTML: `<a href="https://www.hs-heilbronn.de" target="_blank">…</a>`.
+To open an external link in a new tab, write it as plain HTML: `<a href="https://en.wikipedia.org" target="_blank">…</a>`.
 
 
 <div class="nextpage"></div>

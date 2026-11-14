@@ -2107,3 +2107,46 @@ mjx-container[display="true"] > svg {
     background: transparent;
     padding: 0;
 }
+
+/* Quiz zur Selbstkontrolle (```quiz im Markdown, Aufbau siehe page.ftl,
+   Verhalten js/quiz.js). Gruen/Rot als halbtransparente Flaechen, damit sie
+   im hellen wie im dunklen Modus funktionieren. */
+.quiz {
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    border-radius: 6px;
+    background: var(--color-pre-bg);
+    padding: 0.8em 1.1em;
+    margin: 1em 0;
+}
+.quiz-title { font-weight: 700; margin: 0 0 0.6em; }
+.quiz-q + .quiz-q { border-top: 1px dashed var(--color-border); margin-top: 0.9em; padding-top: 0.9em; }
+.quiz-question { margin: 0 0 0.4em; font-weight: 500; }
+.quiz-no { color: var(--color-primary); font-weight: 700; }
+.quiz-multi { color: var(--color-text-light); font-weight: 400; font-size: 0.9em; }
+.quiz-options { list-style: none; margin: 0 0 0.5em; padding: 0; }
+.quiz-options li { margin: 0.2em 0; border-radius: 4px; border: 2px solid transparent; }
+.quiz-options label { display: flex; gap: 0.55em; align-items: baseline; padding: 0.2em 0.45em; cursor: pointer; }
+.quiz-options input { flex: none; margin: 0; transform: translateY(0.1em); }
+.quiz-options li.quiz-ok { background: rgba(46, 160, 67, 0.16); border-color: rgba(46, 160, 67, 0.7); }
+.quiz-options li.quiz-missed { border-color: rgba(46, 160, 67, 0.7); border-style: dashed; }
+.quiz-options li.quiz-wrong { background: rgba(215, 58, 73, 0.14); border-color: rgba(215, 58, 73, 0.7); }
+.quiz-actions { display: flex; align-items: center; gap: 0.8em; flex-wrap: wrap; }
+.quiz-check {
+    font: inherit; font-size: 0.92em; cursor: pointer;
+    padding: 0.25em 0.9em; border-radius: 4px;
+    border: 1px solid var(--color-primary); background: var(--color-surface); color: var(--color-primary);
+}
+.quiz-check:hover { background: var(--color-hover-bg); color: var(--color-hover-fg); }
+.quiz-feedback { font-size: 0.95em; }
+.quiz-feedback-ok { color: #2ea043; font-weight: 600; }
+.quiz-feedback-wrong { color: #d73a49; font-weight: 600; }
+.quiz-explain { margin-top: 0.5em; padding: 0.45em 0.7em; border-radius: 4px; background: var(--color-accent); }
+@media print { .quiz-check, .quiz-feedback { display: none; } }
+.quiz-answer { margin: 0 0 0.5em; }
+.quiz-input {
+    font: inherit; width: 16em; max-width: 100%; padding: 0.25em 0.5em; border-radius: 4px;
+    border: 2px solid var(--color-border); background: var(--color-surface); color: var(--color-text);
+}
+.quiz-input.quiz-input-ok { border-color: rgba(46, 160, 67, 0.85); background: rgba(46, 160, 67, 0.12); }
+.quiz-input.quiz-input-wrong { border-color: rgba(215, 58, 73, 0.85); background: rgba(215, 58, 73, 0.10); }

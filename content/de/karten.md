@@ -13,8 +13,8 @@ Doppelpunkt stellen die Karte ein, jede weitere Zeile ist ein Punkt:
 
 ```map
 height: 340
-49.1469, 9.2166 | Bildungscampus | Bildungscampus 13; 74076 Heilbronn
-49.1225, 9.2108 | Campus Sontheim | Max-Planck-Straße 39; 74081 Heilbronn
+48.7840, 9.1817 | Stuttgart Hauptbahnhof | Arnulf-Klett-Platz 2; 70173 Stuttgart
+49.4106, 8.7153 | Heidelberger Schloss | Schlosshof 1; 69117 Heidelberg
 ```
 
 Eine Punktzeile hat den Aufbau
@@ -48,7 +48,7 @@ Punkte, die nicht in den Text gehören – eine Adressliste etwa – stehen bess
 
 ```map
 height: 360
-data: hochschulorte
+data: orte
 filter: ort | Standort | Location
 search: Name oder Ort | Name or town
 list: true
@@ -80,11 +80,11 @@ andere ist freiwillig:
 ```json
 [
   {
-    "lat": 49.1469, "lon": 9.2166,
-    "title": "Bildungscampus",
-    "subtitle": "Hochschule Heilbronn",
-    "lines": ["Bildungscampus 13", "74076 Heilbronn"],
-    "href": "https://www.hs-heilbronn.de", "hrefText": "hs-heilbronn.de"
+    "lat": 49.1427, "lon": 9.2190,
+    "title": "Rathaus Heilbronn",
+    "subtitle": "Sehenswürdigkeit",
+    "lines": ["Marktplatz 7", "74072 Heilbronn"],
+    "href": "https://de.wikipedia.org/wiki/Rathaus_Heilbronn", "hrefText": "Wikipedia"
   }
 ]
 ```

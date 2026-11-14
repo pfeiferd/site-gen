@@ -50,12 +50,12 @@ Ergebnis:
 Ein Link entsteht aus Text in eckigen und Ziel in runden Klammern:
 
 ```
-Mehr auf der [Hochschule Heilbronn](https://www.hs-heilbronn.de).
+Mehr in der [Wikipedia](https://de.wikipedia.org).
 ```
 
-Ergebnis: Mehr auf der [Hochschule Heilbronn](https://www.hs-heilbronn.de).
+Ergebnis: Mehr in der [Wikipedia](https://de.wikipedia.org).
 
-Soll ein externer Link in einem neuen Tab öffnen, schreibe ihn als reines HTML: `<a href="https://www.hs-heilbronn.de" target="_blank">…</a>`.
+Soll ein externer Link in einem neuen Tab öffnen, schreibe ihn als reines HTML: `<a href="https://de.wikipedia.org" target="_blank">…</a>`.
 
 
 <div class="nextpage"></div>

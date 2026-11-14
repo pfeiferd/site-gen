@@ -113,7 +113,7 @@ Clicking a thumbnail opens it in the full view.
 ```gallery
 beispiel.svg  | An example image
 feather.svg   | The icon of this lecture
-hhn-logo.png  | The university's logo
+logo.svg      | The site's logo
 favicon.png   | The site's favicon
 ```
 
