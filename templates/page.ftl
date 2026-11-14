@@ -352,21 +352,25 @@
                                Erscheint als aufklappbares Listing. Kopfzeilen davor:
                                  name: uni        Name der Datenbank (ohne: Standard-DB)
                                  show: open|none  aufgeklappt bzw. gar nicht anzeigen
+                                 autocommit: off  Vorgabe fuer alle Editoren dieser DB
                                Mehrere Bloecke gleichen Namens werden aneinandergehaengt.
                  ```sql-query  Editor mit Startanfrage. Kopfzeilen davor:
                                  db: uni          Datenbank (ohne: Standard-DB)
                                  title: Aufgabe   Ueberschrift (optional)
+                                 autocommit: off  jede Ausfuehrung zuruecknehmen (Standard:
+                                                  on, Aenderungen bleiben wie in psql)
                                Nach einer Zeile "solution:" folgt die Musterloesung; dann
                                wird jedes Ergebnis mit ihr verglichen und es gibt
                                "Loesung zeigen". -->
             <#assign hasSql = false>
             <#list body?matches('<pre><code class="language-sql-db">(.*?)</code></pre>', "s") as dm>
                 <#assign hasSql = true>
-                <#assign sName = ""><#assign sShow = "closed"><#assign sCode = ""><#assign sHead = true>
+                <#assign sName = ""><#assign sShow = "closed"><#assign sCode = ""><#assign sHead = true><#assign sAuto = "">
                 <#list dm?groups[1]?split("\n") as rawLine>
-                    <#assign dirM = rawLine?trim?matches("^(name|show):\\s*(.*)$", "i")>
+                    <#assign dirM = rawLine?trim?matches("^(name|show|autocommit):\\s*(.*)$", "i")>
                     <#if sHead && dirM>
                         <#if dirM?groups[1]?lower_case == "name"><#assign sName = dirM?groups[2]?trim>
+                        <#elseif dirM?groups[1]?lower_case == "autocommit"><#assign sAuto = dirM?groups[2]?trim?lower_case>
                         <#else><#assign sShow = dirM?groups[2]?trim?lower_case></#if>
                     <#elseif sHead && !rawLine?trim?has_content>
                     <#else>
@@ -375,18 +379,20 @@
                     </#if>
                 </#list>
                 <#assign body = body?replace(dm?groups[0], '<div class="sqldb" data-db="' + sName?replace('"', '&quot;') + '"'
+                    + sAuto?has_content?then(' data-autocommit="' + sAuto?replace('"', '&quot;') + '"', '')
                     + (sShow == "none")?then(' hidden', '') + '><details' + (sShow == "open")?then(' open', '')
                     + '><summary>Datenbank</summary><pre><code class="language-sql">' + sCode?trim + '</code></pre></details></div>', "f")>
             </#list>
             <#list body?matches('<pre><code class="language-sql-query">(.*?)</code></pre>', "s") as sm>
                 <#assign hasSql = true>
                 <#assign qDb = ""><#assign qTitle = ""><#assign qStart = ""><#assign qSol = "">
-                <#assign inSol = false><#assign sHead = true>
+                <#assign inSol = false><#assign sHead = true><#assign qAuto = "">
                 <#list sm?groups[1]?split("\n") as rawLine>
                     <#assign tl = rawLine?trim>
-                    <#assign dirM = tl?matches("^(db|title):\\s*(.*)$", "i")>
+                    <#assign dirM = tl?matches("^(db|title|autocommit):\\s*(.*)$", "i")>
                     <#if sHead && dirM>
                         <#if dirM?groups[1]?lower_case == "db"><#assign qDb = dirM?groups[2]?trim>
+                        <#elseif dirM?groups[1]?lower_case == "autocommit"><#assign qAuto = dirM?groups[2]?trim?lower_case>
                         <#else><#assign qTitle = quizFmt(dirM?groups[2]?trim)></#if>
                     <#elseif sHead && !tl?has_content>
                     <#elseif tl?lower_case == "solution:">
@@ -400,11 +406,12 @@
                 <#assign qRows = qStart?split("\n")?size + 1>
                 <#if (qRows < 4)><#assign qRows = 4></#if>
                 <#if (qRows > 16)><#assign qRows = 16></#if>
-                <#assign body = body?replace(sm?groups[0], '<div class="sqlq" data-db="' + qDb?replace('"', '&quot;') + '">'
+                <#assign body = body?replace(sm?groups[0], '<div class="sqlq" data-db="' + qDb?replace('"', '&quot;') + '"'
+                    + qAuto?has_content?then(' data-autocommit="' + qAuto?replace('"', '&quot;') + '"', '') + '>'
                     + qTitle?has_content?then('<p class="sqlq-title">' + qTitle + '</p>', '')
                     + '<textarea class="sqlq-editor" rows="' + qRows?c + '" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="SQL">' + qStart + '</textarea>'
                     + '<div class="sqlq-actions"><button type="button" class="sqlq-run">Ausführen</button>'
-                    + '<button type="button" class="sqlq-reset">Zurücksetzen</button>'
+                    + '<button type="button" class="sqlq-reset">Anfrage zurücksetzen</button>'
                     + qSol?has_content?then('<button type="button" class="sqlq-show">Lösung zeigen</button>', '')
                     + '<span class="sqlq-status" aria-live="polite"></span></div>'
                     + '<p class="sqlq-feedback" aria-live="polite"></p>'

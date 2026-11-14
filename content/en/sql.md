@@ -115,21 +115,64 @@ GROUP BY c.title;
 
 How the comparison works:
 
-- The **last result table** of the query is compared with that of the model solution.
+- The **last result table** of the query is compared with that of the model solution. For this, the model solution is evaluated on the current data before every run and rolled back afterwards, so changes from other editors do not distort the comparison.
 - The **number of columns** and the **rows** must match, the column names need not – `AVG(grade) AS mean` is just as correct.
 - The **order** only counts if the model solution ends with `ORDER BY`. If the rows are right but their order is not, the feedback says so.
 - Numbers are compared numerically: `2`, `2.0` and `2.0000` are equal.
 
 ## Changing data
 
-`INSERT`, `UPDATE`, `DELETE` and even `CREATE TABLE` are allowed. Every run happens in a transaction of its own that is rolled back afterwards. So the change takes effect within the same run; afterwards the database is back in its initial state – for this block and all others on the page:
+`INSERT`, `UPDATE`, `DELETE` and `CREATE TABLE` are allowed as well. The default is **autocommit** as in `psql`: every statement is committed right away, without `BEGIN` and `COMMIT`. The change then applies to all editors of the same database on the page:
 
 ```sql-query
+INSERT INTO students VALUES (1006, 'Fritz', 'Ulm');
+```
+
+```sql-query
+SELECT * FROM students WHERE city = 'Ulm';
+```
+
+The “Reset database” button restores the initial state from the `sql-db` script – for all editors of that database. Reloading the page restores it anyway; nothing reaches other readers.
+
+### Practice mode without lasting changes
+
+With the header line `autocommit: off`, every run is rolled back afterwards. The change only takes effect within that run – handy for exercises where nobody should alter the data for the following exercises:
+
+````
+```sql-query
+autocommit: off
+UPDATE enrolments SET grade = 1.0 WHERE id = 1002;
+SELECT …
+```
+````
+
+Result:
+
+```sql-query
+autocommit: off
 UPDATE enrolments SET grade = 1.0 WHERE id = 1002;
 SELECT s.name, e.course_id, e.grade
 FROM students s JOIN enrolments e ON e.id = s.id
 WHERE s.id = 1002;
 ```
+
+`autocommit: off` in the `sql-db` block applies to all editors of that database; a single editor can switch it back on with `autocommit: on`.
+
+## Transactions
+
+`BEGIN`, `COMMIT`, `ROLLBACK` and `SAVEPOINT` work as in `psql`:
+
+```sql-query
+BEGIN;
+DELETE FROM enrolments WHERE course_id = 1;
+SELECT COUNT(*) AS inside FROM enrolments;
+ROLLBACK;
+SELECT COUNT(*) AS afterwards FROM enrolments;
+```
+
+A transaction still open at the end of a run is rolled back – every run ends cleanly. Procedures can be invoked with `CALL` and may execute `COMMIT` themselves.
+
+All of this also works in practice mode (`autocommit: off`). What such a run commits disappears again, though: before the next run, the block rebuilds the database and replays everything other editors committed in autocommit mode. That takes just under a second, once.
 
 ## Several databases
 
@@ -170,9 +213,11 @@ SELECT * FROM items WHERE quantity = 0;
 | ` ```sql-db ` | script that builds a database; shown as a collapsible listing |
 | `name: …` | name of the database (optional, before the script) |
 | `show: open` / `show: none` | show the listing expanded, or hide it completely |
+| `autocommit: off` | default for all editors of this database: roll back every run |
 | ` ```sql-query ` | editor; the content is the initial query |
 | `db: …` | database to use (optional, before the query) |
 | `title: …` | heading of the editor (optional, before the query) |
+| `autocommit: off` / `on` | this editor only: roll back each run, or commit (default) |
 | `solution:` | a line of its own; the model solution follows |
 
 ## Notes

@@ -115,21 +115,64 @@ GROUP BY k.titel;
 
 So wird verglichen:
 
-- Verglichen wird jeweils die **letzte Ergebnistabelle** der Anfrage mit der der Musterlösung.
+- Verglichen wird jeweils die **letzte Ergebnistabelle** der Anfrage mit der der Musterlösung. Die Musterlösung wird dafür vor jeder Ausführung auf dem aktuellen Datenbestand ausgewertet und danach zurückgerollt; Änderungen aus anderen Editoren verfälschen den Vergleich also nicht.
 - Die **Spaltenzahl** und die **Zeilen** müssen übereinstimmen, die Spaltennamen nicht – `AVG(note) AS schnitt` ist also ebenso richtig.
 - Die **Reihenfolge** zählt nur, wenn die Musterlösung mit `ORDER BY` endet. Stimmen die Zeilen, aber nicht ihre Reihenfolge, sagt die Rückmeldung das dazu.
 - Zahlen werden numerisch verglichen: `2`, `2.0` und `2.0000` sind gleich.
 
 ## Daten ändern
 
-Auch `INSERT`, `UPDATE`, `DELETE` und sogar `CREATE TABLE` sind erlaubt. Jede Ausführung läuft in einer eigenen Transaktion, die danach zurückgerollt wird. Die Änderung wirkt also innerhalb derselben Ausführung, danach ist die Datenbank wieder im Ausgangszustand – für diesen und alle anderen Blöcke der Seite:
+Auch `INSERT`, `UPDATE`, `DELETE` und `CREATE TABLE` sind erlaubt. Standard ist **Autocommit** wie in `psql`: Jede Anweisung wird sofort festgeschrieben, ohne `BEGIN` und `COMMIT`. Die Änderung gilt dann für alle Editoren derselben Datenbank auf der Seite:
 
 ```sql-query
+INSERT INTO studierende VALUES (1006, 'Fritz', 'Ulm');
+```
+
+```sql-query
+SELECT * FROM studierende WHERE ort = 'Ulm';
+```
+
+Der Knopf „Datenbank zurücksetzen“ stellt den Ausgangszustand aus dem `sql-db`-Skript wieder her – für alle Editoren dieser Datenbank. Spätestens beim Neuladen der Seite ist ohnehin alles wieder wie am Anfang; bei anderen Lesenden kommt nichts an.
+
+### Übungsmodus ohne bleibende Änderungen
+
+Mit der Kopfzeile `autocommit: off` wird jede Ausführung danach zurückgerollt. Die Änderung wirkt nur innerhalb derselben Ausführung – praktisch für Aufgaben, bei denen niemand den Datenbestand für die folgenden Aufgaben verändern soll:
+
+````
+```sql-query
+autocommit: off
+UPDATE belegungen SET note = 1.0 WHERE matrnr = 1002;
+SELECT …
+```
+````
+
+Ergebnis:
+
+```sql-query
+autocommit: off
 UPDATE belegungen SET note = 1.0 WHERE matrnr = 1002;
 SELECT s.name, b.kursnr, b.note
 FROM studierende s JOIN belegungen b ON b.matrnr = s.matrnr
 WHERE s.matrnr = 1002;
 ```
+
+Steht `autocommit: off` im `sql-db`-Block, gilt es für alle Editoren dieser Datenbank; ein einzelner Editor kann es mit `autocommit: on` wieder einschalten.
+
+## Transaktionen
+
+`BEGIN`, `COMMIT`, `ROLLBACK` und `SAVEPOINT` funktionieren wie in `psql`:
+
+```sql-query
+BEGIN;
+DELETE FROM belegungen WHERE kursnr = 1;
+SELECT COUNT(*) AS innerhalb FROM belegungen;
+ROLLBACK;
+SELECT COUNT(*) AS danach FROM belegungen;
+```
+
+Bleibt am Ende einer Ausführung eine Transaktion offen, wird sie zurückgerollt – jede Ausführung endet also abgeschlossen. Prozeduren dürfen mit `CALL` aufgerufen werden und selbst `COMMIT` ausführen.
+
+Im Übungsmodus (`autocommit: off`) ist all das ebenfalls möglich. Was eine solche Ausführung festschreibt, verschwindet aber wieder: Vor der nächsten Ausführung baut der Block die Datenbank neu auf und spielt dabei alles ein, was andere Editoren im Autocommit festgeschrieben haben. Das kostet einmalig knapp eine Sekunde.
 
 ## Mehrere Datenbanken
 
@@ -170,9 +213,11 @@ SELECT * FROM artikel WHERE bestand = 0;
 | ` ```sql-db ` | Skript, das eine Datenbank aufbaut; erscheint als aufklappbares Listing |
 | `name: …` | Name der Datenbank (freiwillig, vor dem Skript) |
 | `show: open` / `show: none` | Listing aufgeklappt zeigen bzw. ganz verstecken |
+| `autocommit: off` | Vorgabe für alle Editoren dieser Datenbank: jede Ausführung zurückrollen |
 | ` ```sql-query ` | Editor; der Inhalt ist die Startanfrage |
 | `db: …` | zu verwendende Datenbank (freiwillig, vor der Anfrage) |
 | `title: …` | Überschrift des Editors (freiwillig, vor der Anfrage) |
+| `autocommit: off` / `on` | nur dieser Editor: Ausführung zurückrollen bzw. festschreiben (Standard) |
 | `solution:` | eigene Zeile; danach folgt die Musterlösung |
 
 ## Hinweise

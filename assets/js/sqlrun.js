@@ -7,20 +7,29 @@
  *
  * Pro Datenbankname gibt es eine PGlite-Instanz. Beim ersten Gebrauch fuehrt sie
  * die Skripte aller ```sql-db-Bloecke dieses Namens in Dokumentreihenfolge aus.
- * Jede Anfrage laeuft in einer Transaktion, die danach zurueckgerollt wird:
- * INSERT, UPDATE, DELETE und sogar CREATE TABLE zeigen ihre Wirkung innerhalb
- * derselben Ausfuehrung, die Datenbank bleibt aber fuer alle Bloecke im
- * Ausgangszustand.
+ * Standard ist Autocommit wie in psql: Jede Anweisung wird einzeln ausgefuehrt
+ * und festgeschrieben, Aenderungen gelten fuer alle Editoren dieser Datenbank,
+ * bis jemand "Datenbank zuruecksetzen" waehlt oder die Seite neu laedt. BEGIN,
+ * COMMIT und ROLLBACK funktionieren wie gewohnt; eine am Ende offene
+ * Transaktion wird zurueckgerollt.
  *
- * Hat ein Block eine Musterloesung, vergleicht das Skript nach jeder Ausfuehrung
- * die letzte Ergebnistabelle mit der der Loesung: gleiche Spaltenzahl und
+ * Mit "autocommit: off" (am Editor oder an der Datenbank) laeuft jede
+ * Ausfuehrung stattdessen in einer Transaktion, die danach zurueckgerollt wird.
+ * Steuert eine solche Anfrage ihre Transaktionen selbst (BEGIN, COMMIT, CALL,
+ * DO …), laeuft sie ohne Huelle, und vor der naechsten Anfrage wird die
+ * Datenbank neu aufgebaut - samt allem, was andere Editoren im Autocommit
+ * festgeschrieben haben.
+ *
+ * Hat ein Block eine Musterloesung, wird sie vor jeder Ausfuehrung auf dem
+ * aktuellen Stand ausgewertet (und immer zurueckgerollt); verglichen wird die
+ * letzte Ergebnistabelle beider: gleiche Spaltenzahl und
  * gleiche Zeilen (Spaltennamen egal; Reihenfolge nur, wenn die Loesung mit
  * ORDER BY sortiert; Zahlen numerisch, also 2 = 2.0).
  */
 (function () {
     var DEFAULTS = {
         de: {
-            run: 'Ausführen', reset: 'Zurücksetzen', show: 'Lösung zeigen', hide: 'Lösung verbergen',
+            run: 'Ausführen', reset: 'Anfrage zurücksetzen', show: 'Lösung zeigen', hide: 'Lösung verbergen',
             loading: 'Datenbank wird geladen (beim ersten Mal einige MB) …', running: 'Läuft …',
             error: 'Fehler:', setupError: 'Fehler beim Aufbau der Datenbank:',
             loadError: 'PGlite konnte nicht geladen werden:',
@@ -36,10 +45,12 @@
             noTable: 'Noch nicht richtig: Die Anfrage liefert keine Ergebnistabelle.',
             empty: 'Bitte zuerst eine Anfrage eingeben.',
             schema: 'Datenbank: Schema und Beispieldaten', schemaNamed: 'Datenbank „{name}“: Schema und Beispieldaten',
-            hint: 'Strg+Enter führt aus. Änderungen an den Daten werden nach jeder Ausführung zurückgesetzt.'
+            hint: 'Strg+Enter führt aus. Änderungen bleiben erhalten, bis die Datenbank zurückgesetzt oder die Seite neu geladen wird.',
+            hintSandbox: 'Strg+Enter führt aus. Änderungen an den Daten werden nach jeder Ausführung zurückgesetzt.',
+            dbreset: 'Datenbank zurücksetzen', dbresetDone: 'Datenbank ist im Ausgangszustand.'
         },
         en: {
-            run: 'Run', reset: 'Reset', show: 'Show solution', hide: 'Hide solution',
+            run: 'Run', reset: 'Reset query', show: 'Show solution', hide: 'Hide solution',
             loading: 'Loading database (a few MB the first time) …', running: 'Running …',
             error: 'Error:', setupError: 'Error while setting up the database:',
             loadError: 'Could not load PGlite:',
@@ -55,7 +66,9 @@
             noTable: 'Not yet: the query does not return a result table.',
             empty: 'Please enter a query first.',
             schema: 'Database: schema and sample data', schemaNamed: 'Database “{name}”: schema and sample data',
-            hint: 'Ctrl+Enter runs the query. Changes to the data are undone after each run.'
+            hint: 'Ctrl+Enter runs the query. Changes persist until the database is reset or the page is reloaded.',
+            hintSandbox: 'Ctrl+Enter runs the query. Changes to the data are undone after each run.',
+            dbreset: 'Reset database', dbresetDone: 'The database is in its initial state.'
         }
     };
     var MAX_ROWS = 200;
@@ -107,36 +120,123 @@
     }
     /* Ueber file:// verweigern Browser ES-Module und fetch() - dann gar nicht erst laden. */
     var FILE = location.protocol === 'file:';
+
+    /* SQL-Text in einzelne Anweisungen zerlegen, wie psql es tut: Semikolons in
+       Zeichenketten, Bezeichnern in "…", Kommentaren und $$-Rumpfen (PL/pgSQL)
+       trennen nicht. Reine Kommentar-Reste fallen weg. */
+    function splitStatements(sql) {
+        var out = [], cur = '', i = 0, n = sql.length, j, m;
+        while (i < n) {
+            var c = sql[i], d = sql[i + 1];
+            if (c === '-' && d === '-') { j = sql.indexOf('\n', i); if (j < 0) j = n; }
+            else if (c === '/' && d === '*') { j = sql.indexOf('*/', i + 2); j = j < 0 ? n : j + 2; }
+            else if (c === "'" || c === '"') {
+                j = i + 1;
+                while (j < n && !(sql[j] === c && sql[j + 1] !== c)) j += sql[j] === c ? 2 : 1;
+                j = Math.min(j + 1, n);
+            }
+            else if (c === '$' && !(i > 0 && /[A-Za-z_0-9]/.test(sql[i - 1])) && (m = /^\$([A-Za-z_][A-Za-z_0-9]*)?\$/.exec(sql.slice(i)))) {
+                j = sql.indexOf(m[0], i + m[0].length); j = j < 0 ? n : j + m[0].length;
+            }
+            else if (c === ';') { out.push(cur); cur = ''; i++; continue; }
+            else j = i + 1;
+            cur += sql.slice(i, j); i = j;
+        }
+        out.push(cur);
+        return out.filter(function (st) { return stripLead(st) !== ''; });
+    }
+    function stripLead(st) { return st.replace(/^(\s+|--[^\n]*|\/\*[\s\S]*?\*\/)+/, ''); }
+
+    /* Steuert die Anfrage ihre Transaktionen selbst (BEGIN, COMMIT, ROLLBACK …)?
+       CALL und DO gehoeren dazu, weil Prozeduren selbst COMMIT ausfuehren duerfen. */
+    var TX_START = /^(begin|start\s+transaction|commit|end|rollback|abort|savepoint|release|prepare\s+transaction|call|do)\b/i;
+    function controlsTransactions(sql) {
+        return splitStatements(sql).some(function (st) { return TX_START.test(stripLead(st)); });
+    }
+
+    function noop() {}
     function database(name) {
         if (FILE) return Promise.reject({ fileProto: true });
         if (!dbs[name]) {
             dbs[name] = lib().then(function (m) {
-                return m.PGlite.create();
-            }).then(function (db) {
+                var script = setupScript(name);
                 var parsers = {};
                 RAW_TYPES.forEach(function (id) { parsers[id] = function (v) { return v; }; });
+                var opts = { rowMode: 'array', parsers: parsers };
+                var db = null;
+                var log = [];      /* im Autocommit ausgefuehrte Anweisungen, je Ausfuehrung eine Liste */
+                var stale = true;  /* vor der naechsten Anfrage neu aufbauen */
                 var queue = Promise.resolve();
-                var script = setupScript(name);
-                var wrapped = {
-                    /* Anfragen nacheinander ausfuehren, jede in eigener Transaktion */
-                    run: function (sql) {
-                        var p = queue.then(function () {
-                            return db.exec('BEGIN').then(function () {
-                                return db.exec(sql, { rowMode: 'array', parsers: parsers });
-                            }).then(function (res) {
-                                return db.exec('ROLLBACK').then(function () { return res; });
-                            }, function (err) {
-                                return db.exec('ROLLBACK').then(function () { throw err; }, function () { throw err; });
-                            });
+
+                /* Anweisungen einzeln ausfuehren wie psql; bei einem Fehler stoppen.
+                   done(st) meldet jede erfolgreiche Anweisung. */
+                function each(list, done) {
+                    var all = [];
+                    return list.reduce(function (p, st) {
+                        return p.then(function () {
+                            return db.exec(st, opts).then(function (r) { all = all.concat(r); if (done) done(st); });
                         });
-                        queue = p.catch(function () {});
-                        return p;
+                    }, Promise.resolve()).then(function () { return all; }, function (err) {
+                        err.partial = all; throw err;
+                    });
+                }
+                /* Eine am Ende einer Ausfuehrung offene Transaktion zuruecknehmen. */
+                function closeTx() {
+                    return db.isInTransaction() ? db.exec('ROLLBACK').then(noop, noop) : Promise.resolve();
+                }
+                function settle(p) {
+                    return p.then(function (r) { return closeTx().then(function () { return r; }); },
+                                  function (e) { return closeTx().then(function () { throw e; }); });
+                }
+                /* Frische Instanz: Aufbauskript, dann alles bisher Festgeschriebene erneut. */
+                function rebuild() {
+                    return (db ? db.close().catch(noop) : Promise.resolve()).then(function () {
+                        return m.PGlite.create();
+                    }).then(function (d) {
+                        db = d;
+                        if (script.trim()) return db.exec(script).then(noop, function (err) { err.setup = true; throw err; });
+                    }).then(function () {
+                        return log.reduce(function (p, unit) {
+                            return p.then(function () { return settle(each(unit)).catch(noop); });
+                        }, Promise.resolve());
+                    }).then(function () { stale = false; });
+                }
+                /* Standard: Autocommit wie in psql - Aenderungen bleiben bestehen. */
+                function autocommit(sql) {
+                    var unit = [];
+                    log.push(unit);
+                    return settle(each(splitStatements(sql), function (st) { unit.push(st); }));
+                }
+                /* autocommit: off - jede Ausfuehrung wird zurueckgerollt. Steuert die Anfrage
+                   ihre Transaktionen selbst, laeuft sie ohne Huelle, und die Datenbank wird
+                   vor der naechsten Anfrage neu aufgebaut. */
+                function sandbox(sql) {
+                    if (controlsTransactions(sql)) {
+                        stale = true;
+                        return settle(each(splitStatements(sql)));
                     }
+                    return db.exec('BEGIN').then(function () {
+                        return db.exec(sql, opts);
+                    }).then(function (res) {
+                        return db.exec('ROLLBACK').then(function () { return res; });
+                    }, function (err) {
+                        return db.exec('ROLLBACK').then(function () { throw err; }, function () { throw err; });
+                    });
+                }
+                /* Alles strikt nacheinander; bei Bedarf vorher neu aufbauen. */
+                function queued(fn) {
+                    return function (arg) {
+                        var p = queue.then(function () { return stale ? rebuild() : null; }).then(function () { return fn(arg); });
+                        queue = p.catch(noop);
+                        return p;
+                    };
+                }
+                var api = {
+                    run: queued(autocommit),
+                    probe: queued(sandbox),
+                    reset: queued(function () { log = []; return rebuild(); })
                 };
-                if (!script.trim()) return wrapped;
-                return db.exec(script).then(function () { return wrapped; }, function (err) {
-                    err.setup = true; throw err;
-                });
+                return queued(noop)().then(function () { return api; });
             });
             dbs[name].catch(function () { delete dbs[name]; });
         }
@@ -193,6 +293,7 @@
     }
     function showError(out, err, setup) {
         out.textContent = '';
+        if (err && err.partial && err.partial.length) render(out, err.partial);
         var p = el('p', 'sqlq-error');
         p.appendChild(el('strong', '', (setup ? t('setupError') : t('error')) + ' '));
         p.appendChild(document.createTextNode(err && err.message ? err.message : String(err)));
@@ -239,6 +340,17 @@
         st.textContent = key ? t(key) : '';
         if (key) st.setAttribute('data-key', key); else st.removeAttribute('data-key');
     }
+    /* Autocommit gilt, solange weder der Editor noch seine Datenbank "off" sagen. */
+    function autocommitOf(q) {
+        var v = q.getAttribute('data-autocommit');
+        if (!v) {
+            var name = q.getAttribute('data-db') || '';
+            [].slice.call(document.querySelectorAll('.sqldb')).forEach(function (d) {
+                if ((d.getAttribute('data-db') || '') === name && d.getAttribute('data-autocommit')) v = d.getAttribute('data-autocommit');
+            });
+        }
+        return !/^(off|no|false|0)$/i.test(v || 'on');
+    }
     function run(q) {
         var ed = q.querySelector('.sqlq-editor'), out = q.querySelector('.sqlq-out');
         var sol = q.querySelector('.sqlq-solution code');
@@ -251,15 +363,16 @@
         setStatus(q, dbs[name] || FILE ? 'running' : 'loading');
         return database(name).then(function (db) {
             setStatus(q, 'running');
-            return db.run(sql).then(function (results) {
-                render(out, results);
-                if (!sol) return;
-                var solSql = sol.textContent;
-                return db.run(solSql).then(function (expRes) {
-                    var exp = lastTable(expRes);
+            /* Musterloesung zuerst, auf demselben Stand und immer zurueckgerollt -
+               sonst fuehrte sie z.B. ein INSERT der Aufgabe ein zweites Mal aus. */
+            var solSql = sol ? sol.textContent : null;
+            var expected = solSql ? db.probe(solSql).then(lastTable, function () { return null; }) : Promise.resolve(null);
+            return expected.then(function (exp) {
+                return (autocommitOf(q) ? db.run(sql) : db.probe(sql)).then(function (results) {
+                    render(out, results);
                     if (exp) setFeedback(q, compare(lastTable(results), exp, /\border\s+by\b/i.test(lastStatement(solSql))));
-                });
-            }, function (err) { showError(out, err, false); });
+                }, function (err) { showError(out, err, !!(err && err.setup)); });
+            });
         }, function (err) {
             if (err && err.fileProto) { out.textContent = ''; out.appendChild(el('p', 'sqlq-error', t('fileProto'))); return; }
             showError(out, err, !!(err && err.setup));
@@ -267,6 +380,17 @@
         }).then(function () {
             btn.disabled = false; setStatus(q, null);
         });
+    }
+    /* Datenbank in den Ausgangszustand (Aufbauskript) zuruecksetzen - fuer alle
+       Editoren dieser Datenbank. */
+    function resetDb(q) {
+        var name = q.getAttribute('data-db') || '';
+        if (!dbs[name]) { setStatus(q, 'dbresetDone'); return; }
+        var b = q.querySelector('.sqlq-dbreset');
+        b.disabled = true;
+        dbs[name].then(function (db) { return db.reset(); }).then(function () {
+            setStatus(q, 'dbresetDone');
+        }, function (err) { showError(q.querySelector('.sqlq-out'), err, true); }).then(function () { b.disabled = false; });
     }
     function reset(q) {
         var ed = q.querySelector('.sqlq-editor');
@@ -279,7 +403,9 @@
         q.querySelector('.sqlq-reset').textContent = t('reset');
         var sb = q.querySelector('.sqlq-show'), sol = q.querySelector('.sqlq-solution');
         if (sb) sb.textContent = sol.hidden ? t('show') : t('hide');
-        q.querySelector('.sqlq-editor').title = t('hint');
+        var dbr = q.querySelector('.sqlq-dbreset');
+        if (dbr) dbr.textContent = t('dbreset');
+        q.querySelector('.sqlq-editor').title = t(autocommitOf(q) ? 'hint' : 'hintSandbox');
         var fb = q.querySelector('.sqlq-feedback'), st = fb.getAttribute('data-state');
         if (st) fb.textContent = stateText(JSON.parse(st));
         var status = q.querySelector('.sqlq-status').getAttribute('data-key');
@@ -302,6 +428,11 @@
             });
             q.querySelector('.sqlq-run').addEventListener('click', function () { run(q); });
             q.querySelector('.sqlq-reset').addEventListener('click', function () { reset(q); });
+            if (autocommitOf(q)) {
+                var dbr = el('button', 'sqlq-dbreset'); dbr.type = 'button';
+                q.querySelector('.sqlq-reset').insertAdjacentElement('afterend', dbr);
+                dbr.addEventListener('click', function () { resetDb(q); });
+            }
             var sb = q.querySelector('.sqlq-show');
             if (sb) sb.addEventListener('click', function () {
                 var sol = q.querySelector('.sqlq-solution');
