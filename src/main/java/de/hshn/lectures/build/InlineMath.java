@@ -116,7 +116,65 @@ final class InlineMath {
         return HTML_BLOCK_TAG_LINE.matcher(line).matches() ? "" : null;
     }
 
+    /**
+     * Escapes the formulas of one line, leaving inline code spans alone: a
+     * {@code `$1`} next to a {@code `$2`} on the same line is code, not a formula.
+     */
     private static String escapeLine(String line) {
+        if (line.indexOf('$') < 0) {
+            return line;
+        }
+        if (line.indexOf('`') < 0) {
+            return escapeText(line);
+        }
+        StringBuilder sb = new StringBuilder(line.length() + 16);
+        int textStart = 0;
+        int i = 0;
+        while (i < line.length()) {
+            if (line.charAt(i) != '`') {
+                i++;
+                continue;
+            }
+            int run = i;
+            while (run < line.length() && line.charAt(run) == '`') {
+                run++;
+            }
+            int len = run - i;
+            int close = closingRun(line, run, len);
+            if (close < 0) {
+                i = run;                // unmatched backticks are plain text
+                continue;
+            }
+            sb.append(escapeText(line.substring(textStart, i)));
+            sb.append(line, i, close + len);   // code span verbatim
+            i = close + len;
+            textStart = i;
+        }
+        sb.append(escapeText(line.substring(textStart)));
+        return sb.toString();
+    }
+
+    /** Start of the next run of exactly {@code len} backticks from {@code from}, or -1. */
+    private static int closingRun(String line, int from, int len) {
+        int i = from;
+        while (i < line.length()) {
+            if (line.charAt(i) != '`') {
+                i++;
+                continue;
+            }
+            int run = i;
+            while (run < line.length() && line.charAt(run) == '`') {
+                run++;
+            }
+            if (run - i == len) {
+                return i;
+            }
+            i = run;
+        }
+        return -1;
+    }
+
+    private static String escapeText(String line) {
         if (line.indexOf('$') < 0) {
             return line;
         }
