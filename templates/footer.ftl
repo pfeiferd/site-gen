@@ -479,7 +479,21 @@
     window.MathJax = {
         tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']], processEscapes: true },
         options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
-        svg: { fontCache: 'global' }
+        // mtextInheritFont: \text{...}, \textsf{...} usw. in der Schrift der Seite
+        // setzen - mit echter Unterschneidung und Umlauten (MathJax setzt Text
+        // sonst Buchstabe fuer Buchstabe aus seinen eigenen Glyphen, ohne Kerning).
+        svg: { fontCache: 'global', mtextInheritFont: true },
+        // \textsf{...} (z.B. Relationen- und Attributnamen) in Latin Modern Sans
+        // statt in der Seitenschrift: gut vom Fliesstext unterscheidbar, aber mit
+        // echtem Kerning und Umlauten. Die Schrift wird vor dem Setzen geladen,
+        // damit MathJax die Breiten mit ihr misst (sonst Luecken/Ueberlappungen).
+        startup: {
+            pageReady: function () {
+                MathJax.startup.output.font.cssFontMap['sans-serif'] = ['"LM Sans", sans-serif', false, false];
+                var ready = document.fonts ? document.fonts.load('1em "LM Sans"') : Promise.resolve();
+                return ready.catch(function () {}).then(function () { return MathJax.startup.defaultPageReady(); });
+            }
+        }
     };
 }());
 </script>
