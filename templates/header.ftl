@@ -133,13 +133,22 @@
 </#function>
 
 <#-- lectureTitle einer Vorlesung in einer Sprache (kommt aus <lang>/meta.properties).
-     Leerstring, falls es die Vorlesung in dieser Sprache nicht gibt. -->
+     Gibt es die Vorlesung nicht auf Englisch, liefert lectureTitleEn (etwa in
+     de/meta.properties) wenigstens den englischen Titel fuer Kacheln und Kopfzeile.
+     Leerstring, falls es keinen Titel in dieser Sprache gibt. -->
 <#function lectureTitleFor slug lang>
     <#list published_pages as pg>
         <#if (pg.navgroup!"") == "docs" && (pg.lecture!"") == slug && (pg.lang!"de") == lang && (pg.lectureTitle!"")?has_content>
             <#return pg.lectureTitle />
         </#if>
     </#list>
+    <#if lang == "en">
+        <#list published_pages as pg>
+            <#if (pg.navgroup!"") == "docs" && (pg.lecture!"") == slug && (pg.lectureTitleEn!"")?has_content>
+                <#return pg.lectureTitleEn />
+            </#if>
+        </#list>
+    </#if>
     <#return "" />
 </#function>
 

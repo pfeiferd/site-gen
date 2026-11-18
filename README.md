@@ -253,6 +253,10 @@ During the build, a page's front matter results from the cascade (increasing pre
 1. `content/meta.properties` (site-wide)
 2. `content/<lecture>/meta.properties` (e.g. `navgroup=docs`, `lecture=<slug>`, `lectureIcon=…`)
 3. `content/<lecture>/<lang>/meta.properties` (`lectureTitle` per language)
+
+A lecture that exists only in German still gets an English title on the `[LECTURES]` tiles
+and in the header if its `de/meta.properties` also sets `lectureTitleEn` (e.g.
+`lectureTitleEn=Databases 1`). A real `en/meta.properties` with `lectureTitle` takes precedence.
 4. the `.md`'s own front matter (wins)
 
 The **language** is derived from the folder name (`de`/`en`) and does not need to be
