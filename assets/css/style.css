@@ -1950,9 +1950,12 @@ html[data-theme="dark"] .hljs-strong { color: #c9d1d9; }
    @page-Masse: A4 quer (297x210mm), Rand 1cm oben/unten + 1.4cm links/rechts
    -> bedruckbare Flaeche 190mm x 269.2mm. */
 @media print {
+    /* Gedruckte Folien sehen aus wie am Bildschirm: dieselbe Schrift (15px)
+       und dieselbe Spaltenbreite (900px, siehe .slide-inner). Was am Bildschirm
+       (1280x800) auf eine Folie passt, passt so auch auf eine A4-Seite quer -
+       frueher setzte der Druck feste, rund 1,6-mal groessere Schriften (18pt),
+       und viele Folien wurden unten abgeschnitten. */
     html.mode-slides body {
-        font-size: 18pt;
-        line-height: 1.45;
         padding-bottom: 0;
     }
 
@@ -1969,13 +1972,25 @@ html[data-theme="dark"] .hljs-strong { color: #c9d1d9; }
         flex-direction: column;
         /* 4mm unter der bedruckbaren Hoehe (A4 quer, 1cm Rand oben/unten = 190mm):
            Puffer gegen Browser-Rundungen und Inhalte, die die Folie leicht
-           ueberschreiten – verhindert leere Folgeseiten. Die groesseren Schriften
-           (18pt statt 13pt) fuellen die Seite trotzdem visuell gut aus. */
+           ueberschreiten – verhindert leere Folgeseiten. */
         height: 186mm;
         overflow: hidden;
         padding: 0;
         box-sizing: border-box;
     }
+
+    /* Quiz und Inhaltsverzeichnis sind oft laenger als eine Folie (am Bildschirm
+       scrollt man). Im Druck duerfen sie deshalb ueber mehrere Seiten laufen,
+       statt abgeschnitten zu werden. */
+    html.mode-slides .slide:has(.quiz),
+    html.mode-slides .slide:has(.page-toc) {
+        height: auto;
+        min-height: 186mm;
+        overflow: visible;
+    }
+    html.mode-slides .slide:has(.quiz) .slide-inner,
+    html.mode-slides .slide:has(.page-toc) .slide-inner { overflow: visible; }
+    html.mode-slides .quiz-q { break-inside: avoid; }
 
     /* Umbruch VOR jeder Folie ausser der ersten -> genau eine Folie pro Seite,
        ohne Leerseite dazwischen und ohne erzwungenen Umbruch nach der letzten. */
@@ -1988,57 +2003,11 @@ html[data-theme="dark"] .hljs-strong { color: #c9d1d9; }
         flex: 1;
         min-height: 0;
         overflow: hidden;
-        max-width: none;
-        margin: 0;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
         padding: 0.6rem 0.5rem 0.4rem;
         box-sizing: border-box;
-    }
-
-    /* Groessere Schriften fuer Praesentation. */
-    html.mode-slides .slide-inner h1 {
-        font-size: 30pt;
-        line-height: 1.2;
-        margin-bottom: 0.5rem;
-        border-bottom: 1pt solid #000;
-        padding-bottom: 0.25rem;
-    }
-
-    html.mode-slides .slide-inner h2 {
-        font-size: 22pt;
-        line-height: 1.25;
-        margin-top: 0.6rem;
-        margin-bottom: 0.3rem;
-        padding-left: 0;
-        border-left: none;
-    }
-
-    html.mode-slides .slide-inner h3 {
-        font-size: 18pt;
-        margin-top: 0.4rem;
-    }
-
-    html.mode-slides .slide-inner p,
-    html.mode-slides .slide-inner li {
-        font-size: 18pt;
-        line-height: 1.45;
-        margin-bottom: 0.3rem;
-    }
-
-    html.mode-slides .slide-inner ul,
-    html.mode-slides .slide-inner ol {
-        margin: 0.2rem 0 0.3rem 1.4em;
-    }
-
-    html.mode-slides .slide-inner code {
-        font-size: 15pt;
-    }
-
-    html.mode-slides .slide-inner pre code {
-        font-size: 13pt;
-    }
-
-    html.mode-slides .slide-inner table {
-        font-size: 15pt;
     }
 
     /* Bilder so begrenzen, dass sie samt Ueberschrift und Text auf die Seite
@@ -2199,3 +2168,26 @@ mjx-container[display="true"] > svg {
 .page-article .sqlq-info { margin: 0.2em 0 0.3em; font-size: 0.88em; color: var(--color-text-light); }
 .sqlq-error { margin: 0; padding: 0.45em 0.7em; border-radius: 4px; background: rgba(215, 58, 73, 0.10); border: 1px solid rgba(215, 58, 73, 0.6); font-family: var(--font-mono, monospace); font-size: 0.88em; white-space: pre-wrap; }
 @media print { .sqlq-actions, .sqlq-feedback { display: none; } }
+
+/* "Mit Lösungen drucken" (js/print-solutions.js): der zweite Druckknopf setzt
+   vor dem Drucken html.print-solutions. Dann erscheinen die Musterloesungen der
+   SQL-Editoren, die richtigen Quiz-Optionen und die Erklaerungen. Der normale
+   Druck bleibt ohne Loesungen. */
+.quiz-print-answer { display: none; }
+@media print {
+    .nav-print-solutions { display: none; }
+    html.print-solutions .sqlq-solution[hidden],
+    html.print-solutions .quiz-explain[hidden] { display: block !important; }
+    html.print-solutions .quiz-print-answer { display: block; margin: 0 0 0.5em; font-weight: 600; color: #1a7f37; }
+    /* Auf Papier kann man nicht scrollen: lange Zeilen umbrechen statt abschneiden. */
+    html.print-solutions .sqlq-solution,
+    html.print-solutions .sqlq-solution code { white-space: pre-wrap; overflow-wrap: anywhere; overflow: visible; }
+    html.print-solutions .sqlq-solution::before {
+        content: attr(data-label); display: block; margin-bottom: 0.3em;
+        font-family: var(--font-main); font-weight: 700; color: #1a7f37;
+    }
+    html.print-solutions .quiz-options li.quiz-print-ok {
+        background: rgba(46, 160, 67, 0.16); border-color: rgba(46, 160, 67, 0.7);
+    }
+    html.print-solutions .quiz-options li.quiz-print-ok label > span::after { content: " \2713"; color: #1a7f37; font-weight: 700; }
+}

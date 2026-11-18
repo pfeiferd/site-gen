@@ -509,6 +509,13 @@
 <#if (hasSql!false)>
 <script src="${content.rootpath}js/sqlrun.js?v=${.now?long?c}"></script>
 </#if>
+<#-- Zweiter Druckknopf "Mit Lösungen drucken" auf Seiten mit Quiz oder SQL-Editoren.
+     Standardmaessig AUS; erst printSolutions=true in meta.properties (site-weit
+     oder je Vorlesung) schaltet ihn ein - sonst kaemen Studierende mit einem Klick
+     an alle Loesungen. -->
+<#if ((content.printSolutions!"false") == "true") && ((hasQuiz!false) || (hasSql!false))>
+<script src="${content.rootpath}js/print-solutions.js?v=${.now?long?c}"></script>
+</#if>
 <#-- Karten (Leaflet, lokal gebuendelt) nur auf Seiten laden, die eine haben.
      page.ftl setzt hasMap, wenn es einen ```map-Block umgewandelt hat. -->
 <#if (hasMap!false)>

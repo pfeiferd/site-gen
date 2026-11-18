@@ -160,3 +160,7 @@ Tips for text answers:
 - After a wrong input the feedback names the **first** spelling – so put the most common one first.
 
 The quiz is meant for **self-checking**: the correct answers are in the page source. Graded tests belong on a learning platform such as ILIAS.
+
+## Printing with solutions
+
+The normal print button prints the questions without solutions – as a worksheet. With `printSolutions=true` (in `meta.properties`, site-wide or per lecture – off by default), pages with a quiz get a second button **“Print with solutions”** (printer with a tick) next to it: it prints the correct options marked green with a tick, the first correct answer of input questions and all explanations.

@@ -160,3 +160,7 @@ Tipps für Text-Antworten:
 - Die Rückmeldung nach einer falschen Eingabe nennt die **erste** Schreibweise – schreibe die gebräuchlichste also nach vorn.
 
 Das Quiz dient der **Selbstkontrolle**: Die richtigen Antworten stehen im Seitenquelltext. Für bewertete Tests ist eine Lernplattform wie ILIAS der richtige Ort.
+
+## Drucken mit Lösungen
+
+Der normale Druckknopf druckt die Fragen ohne Lösungen – als Arbeitsblatt. Ist `printSolutions=true` gesetzt (in `meta.properties`, site-weit oder je Vorlesung – standardmäßig aus), erscheint auf Seiten mit Quiz daneben ein zweiter Knopf **„Mit Lösungen drucken“** (Drucker mit Haken): Er druckt die richtigen Optionen grün markiert und mit Haken, bei Eingabefragen die erste richtige Antwort und alle Erklärungen mit.

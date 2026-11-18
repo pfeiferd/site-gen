@@ -120,6 +120,8 @@ How the comparison works:
 - The **order** only counts if the model solution ends with `ORDER BY`. If the rows are right but their order is not, the feedback says so.
 - Numbers are compared numerically: `2`, `2.0` and `2.0000` are equal.
 
+When printing, the model solutions stay hidden. For a handout with solutions, set `printSolutions=true` in `meta.properties` (off by default): pages with SQL editors then offer a second print button **“Print with solutions”**: it prints each editor's model solution below it, headed “Model solution”.
+
 ## Changing data
 
 `INSERT`, `UPDATE`, `DELETE` and `CREATE TABLE` are allowed as well. The default is **autocommit** as in `psql`: every statement is committed right away, without `BEGIN` and `COMMIT`. The change then applies to all editors of the same database on the page:

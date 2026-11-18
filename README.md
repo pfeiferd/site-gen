@@ -25,6 +25,7 @@ figures are compiled at build time with an installed LaTeX.
     - [One lecture without a lecture folder](#one-lecture-without-a-lecture-folder)
   - [Visibility: `publish`](#visibility-publish)
   - [Document-only lectures (`documentOnly`)](#document-only-lectures-documentonly)
+  - [Printing with solutions (`printSolutions`)](#printing-with-solutions-printsolutions)
   - [Header controls (`showViewSwitch`, `showFullscreen`, `showHeaderToggle`, `showThemeToggle`)](#header-controls-showviewswitch-showfullscreen-showheadertoggle-showthemetoggle)
   - [Internationalization (i18n)](#internationalization-i18n)
   - [Interface state in the URL](#interface-state-in-the-url)
@@ -148,6 +149,7 @@ assets/                      generic UI files (CSS, JS, UI icons)
   js/leaflet.js, css/leaflet.css   locally bundled Leaflet (maps)
   js/quiz.js                 self-check quizzes (```quiz), loaded only on pages with a quiz
   js/sqlrun.js               SQL editors (```sql-db, ```sql-query), loaded only on pages with one
+  js/print-solutions.js      second print button "print with solutions" (only with printSolutions=true)
   js/pglite/                 locally bundled PGlite 0.5.16 (PostgreSQL as WebAssembly, Apache-2.0);
                              fetched by sqlrun.js only when a reader uses an SQL editor
 src/main/java/de/hshn/lectures/build/   the build tools (see below)
@@ -336,6 +338,22 @@ is `false`.
 ```properties
 # content/<lecture>/meta.properties – no Slides view, document view only
 documentOnly=true
+```
+
+### Printing with solutions (`printSolutions`)
+
+On pages with a quiz (```` ```quiz ````) or SQL editors with a model solution
+(```` ```sql-query ```` with `solution:`), the header can offer a second print button,
+**“Print with solutions”** (printer with a tick). It prints the model solutions of the SQL
+editors, the correct quiz options, the answers to input questions and the explanations – for a
+handout. The normal print button always prints **without** solutions (a worksheet).
+
+The button is **off by default**, since otherwise every reader gets all solutions with one click.
+Switch it on site-wide in `content/meta.properties` or per lecture in
+`content/<lecture>/meta.properties` (cascade as for every other key):
+
+```properties
+printSolutions=true
 ```
 
 ### Header controls (`showViewSwitch`, `showFullscreen`, `showHeaderToggle`, `showThemeToggle`)

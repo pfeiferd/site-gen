@@ -120,6 +120,8 @@ So wird verglichen:
 - Die **Reihenfolge** zählt nur, wenn die Musterlösung mit `ORDER BY` endet. Stimmen die Zeilen, aber nicht ihre Reihenfolge, sagt die Rückmeldung das dazu.
 - Zahlen werden numerisch verglichen: `2`, `2.0` und `2.0000` sind gleich.
 
+Beim Drucken bleiben die Musterlösungen verborgen. Für ein Handout mit Lösungen gibt es mit `printSolutions=true` in `meta.properties` (standardmäßig aus) auf Seiten mit SQL-Editoren den zweiten Druckknopf **„Mit Lösungen drucken“**: Er druckt unter jedem Editor seine Musterlösung mit, überschrieben mit „Musterlösung“.
+
 ## Daten ändern
 
 Auch `INSERT`, `UPDATE`, `DELETE` und `CREATE TABLE` sind erlaubt. Standard ist **Autocommit** wie in `psql`: Jede Anweisung wird sofort festgeschrieben, ohne `BEGIN` und `COMMIT`. Die Änderung gilt dann für alle Editoren derselben Datenbank auf der Seite:
