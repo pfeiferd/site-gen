@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
 /**
@@ -244,23 +245,28 @@ public final class PlantumlPreprocessor {
      */
     private String prepare(String source) {
         String s = source.strip();
-        String header;
+        boolean uml = !s.contains("@start") || s.contains("@startuml");
+        StringBuilder header = new StringBuilder();
         if (dot == null) {
-            header = "\n!pragma layout smetana";
+            header.append("\n!pragma layout smetana");
         } else if (!s.contains("linetype")) {
             // Gerade Linien mit Ecken statt Bezierkurven (Hausstil fuer UML).
             // "polyline" statt "ortho": bei ortho kann Graphviz Beschriftungen
             // nicht sauber platzieren, sie landen auf Linien und Klassen. Ein
             // Diagramm kann mit eigenem "skinparam linetype ..." abweichen.
-            header = "\nskinparam linetype polyline";
-        } else {
-            header = "";
+            header.append("\nskinparam linetype polyline");
+        }
+        if (uml) {
+            // Klassen eckig wie im UML-Standard (PlantUML rundet sie sonst ab);
+            // wirkt nur in Klassendiagrammen, Objekte sind ohnehin eckig.
+            header.append("\n<style>\nclassDiagram {\n  class {\n    RoundCorner 0\n  }\n}\n</style>");
         }
         if (!s.contains("@start")) {
             return "@startuml" + header + "\n" + s + "\n@enduml";
         }
         // Insert the header right after the first @start… directive.
-        return header.isEmpty() ? s : s.replaceFirst("(?m)(@start\\w+[^\\n]*)$", "$1" + header);
+        return header.length() == 0 ? s
+                : s.replaceFirst("(?m)(@start\\w+[^\\n]*)$", "$1" + Matcher.quoteReplacement(header.toString()));
     }
 
     private String sha256(String text) {
