@@ -418,6 +418,65 @@
                     + qSol?has_content?then('<pre class="sqlq-solution" hidden><code class="language-sql">' + qSol + '</code></pre>', '')
                     + '<div class="sqlq-out"></div></div>', "f")>
             </#list>
+            <#-- Algorithmus Schritt fuer Schritt: ```java-steps zeigt Java (und optional
+                 Pseudocode) nebeneinander; js/javasteps.js hebt je Schritt die passenden
+                 Zeilen hervor und blendet Erklaerung und Variablenwerte ein.
+                   title: Ueberschrift (optional, vor den Abschnitten)
+                   pseudo:   ab hier folgt der Pseudocode (optional)
+                   java:     ab hier folgt der Java-Code
+                   step: P | J | Erklaerung | Variablen
+                             P  Pseudocode-Zeilen (1-basiert, z.B. 2 oder 2,3 oder 2-4; leer = keine)
+                             J  Java-Zeilen, gleiche Schreibweise
+                             Variablen  "i=0; a[i]=7" (Strichpunkt-getrennt, optional);
+                                        Aenderungen gegenueber dem Vorschritt werden markiert
+                 Code steht unveraendert (Einrueckung zaehlt) bis zum naechsten Abschnitt oder
+                 step:. In der Erklaerung gehen **fett** und `code`. -->
+            <#assign hasJavaSteps = false>
+            <#list body?matches('<pre><code class="language-java-steps">(.*?)</code></pre>', "s") as jm>
+                <#assign hasJavaSteps = true>
+                <#assign jsTitle = ""><#assign jsPseudo = ""><#assign jsJava = ""><#assign jsSec = "head"><#assign jsList = "">
+                <#list jm?groups[1]?split("\n") as rawJs>
+                    <#assign jsLine = rawJs?replace("\r", "")>
+                    <#assign jsTrim = jsLine?trim>
+                    <#assign jsTitleM = jsTrim?matches("^title:\\s*(.*)$", "i")>
+                    <#assign jsStepM = jsTrim?matches("^step:\\s*(.*)$", "i")>
+                    <#if jsStepM>
+                        <#assign jsSec = "steps">
+                        <#assign jsParts = jsStepM?groups[1]?split("|")>
+                        <#assign jsP = ((jsParts[0])!"")?replace("[^0-9,\\-]", "", "r")>
+                        <#assign jsJ = ((jsParts[1])!"")?replace("[^0-9,\\-]", "", "r")>
+                        <#assign jsE = ((jsParts[2])!"")?trim>
+                        <#assign jsV = ((jsParts[3])!"")?trim>
+                        <#assign jsList = jsList + '<li data-p="' + jsP + '" data-j="' + jsJ + '"'
+                            + jsV?has_content?then(' data-v="' + jsV?replace('"', '&quot;') + '"', '') + '>' + quizFmt(jsE) + '</li>'>
+                    <#elseif jsSec == "head" && jsTitleM>
+                        <#assign jsTitle = quizFmt(jsTitleM?groups[1]?trim)>
+                    <#elseif jsSec == "head" && !jsTrim?has_content>
+                    <#elseif jsTrim?lower_case == "pseudo:" && jsSec != "steps">
+                        <#assign jsSec = "pseudo">
+                    <#elseif jsTrim?lower_case == "java:" && jsSec != "steps">
+                        <#assign jsSec = "java">
+                    <#elseif jsSec == "pseudo">
+                        <#assign jsPseudo = jsPseudo + jsLine + "\n">
+                    <#elseif jsSec == "java">
+                        <#assign jsJava = jsJava + jsLine + "\n">
+                    </#if>
+                </#list>
+                <#assign jsPseudo = jsPseudo?replace("^\\n+|\\s+$", "", "r")>
+                <#assign jsJava = jsJava?replace("^\\n+|\\s+$", "", "r")>
+                <#assign body = body?replace(jm?groups[0], '<div class="jsteps">'
+                    + jsTitle?has_content?then('<p class="jsteps-title">' + jsTitle + '</p>', '')
+                    + '<div class="jsteps-code' + jsPseudo?has_content?then(' jsteps-both', '') + '">'
+                    + jsPseudo?has_content?then('<div class="jsteps-pane" data-kind="pseudo"><p class="jsteps-label">Pseudocode</p><pre><code class="language-plaintext">' + jsPseudo + '</code></pre></div>', '')
+                    + '<div class="jsteps-pane" data-kind="java"><p class="jsteps-label">Java</p><pre><code class="language-java">' + jsJava + '</code></pre></div>'
+                    + '</div>'
+                    + '<div class="jsteps-info"><p class="jsteps-expl" aria-live="polite"></p><div class="jsteps-vars"></div></div>'
+                    + '<div class="jsteps-actions"><button type="button" class="jsteps-prev">Zurück</button>'
+                    + '<button type="button" class="jsteps-next">Weiter</button>'
+                    + '<button type="button" class="jsteps-reset">Neu starten</button>'
+                    + '<span class="jsteps-count" aria-live="polite"></span></div>'
+                    + '<ol class="jsteps-list" hidden>' + jsList + '</ol></div>', "f")>
+            </#list>
             <#-- Gleichlautende Ueberschriften (z.B. zweimal "Uebungsaufgabe") bekommen von
                  Flexmark dieselbe id. Damit Anker, Inhaltsverzeichnis und Nummerierung sie
                  unterscheiden, erhalten Wiederholungen ein Suffix (-2, -3, ...). Jede Ueberschrift

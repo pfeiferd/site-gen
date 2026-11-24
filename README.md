@@ -39,6 +39,7 @@ figures are compiled at build time with an installed LaTeX.
   - [Maps (`map` blocks)](#maps-map-blocks)
   - [Smooth scrolling](#smooth-scrolling)
   - [Syntax highlighting](#syntax-highlighting)
+  - [Java step by step (`java-steps` blocks)](#java-step-by-step-java-steps-blocks)
 - [License](#license)
 
 ## Requirements
@@ -157,6 +158,7 @@ assets/                      generic UI files (CSS, JS, UI icons)
   js/leaflet.js, css/leaflet.css   locally bundled Leaflet (maps)
   js/quiz.js                 self-check quizzes (```quiz), loaded only on pages with a quiz
   js/sqlrun.js               SQL editors (```sql-db, ```sql-query), loaded only on pages with one
+  js/javasteps.js            step-through Java/pseudocode (```java-steps), loaded only on pages with one
   js/print-solutions.js      second print button "print with solutions" (only with printSolutions=true)
   js/pglite/                 locally bundled PGlite 0.5.16 (PostgreSQL as WebAssembly, Apache-2.0);
                              fetched by sqlrun.js only when a reader uses an SQL editor
@@ -841,6 +843,30 @@ highlighted in colour. This uses [highlight.js](https://highlightjs.org/), **bun
 scheme in `assets/css/highlight.css`. Only blocks **with** a language tag are colourized on the
 client; blocks without a language stay untouched (handy for verbatim examples). No configuration
 is needed – the language tag in the Markdown is enough.
+
+### Java step by step (`java-steps` blocks)
+
+A `java-steps` block walks through an algorithm line by line: Java and (optionally) pseudocode
+side by side, the lines of the current step highlighted, plus an explanation and the variable
+values. It is client-side only (`assets/js/javasteps.js`, loaded just on pages with such a block,
+after highlight.js).
+
+````
+```java-steps
+title: Linear search            (optional)
+pseudo:                         (optional section, code follows as written)
+LinearSearch(A, target) …
+java:
+int linearSearch(int[] a, int target) { … }
+step: 1 | 1 | Explanation with `code`. | a=[4, 8, 15]; target=15
+```
+````
+
+`step: P | J | explanation | variables` – `P`/`J` are 1-based line numbers (`2`, `2,3`, `2-4`) in
+the pseudocode/Java section; variables are `name=value` pairs separated by `;`, and values that
+changed since the previous step are marked. In slide mode the arrow keys step through the code on
+the current slide before changing slide. Print shows the code and the list of all steps. See
+`content/en/java.md` for a full example.
 
 ## License
 

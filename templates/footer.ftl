@@ -543,5 +543,10 @@
     });
 }());
 </script>
+<#-- Java-Schrittanzeige (```java-steps, siehe page.ftl). Muss nach dem Highlighting
+     laufen, weil es die bereits eingefaerbten Zeilen einzeln markiert. -->
+<#if (hasJavaSteps!false)>
+<script src="${content.rootpath}js/javasteps.js?v=${.now?long?c}"></script>
+</#if>
 </body>
 </html>

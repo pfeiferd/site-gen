@@ -2188,6 +2188,69 @@ mjx-container[display="true"] > svg {
 .sqlq-error { margin: 0; padding: 0.45em 0.7em; border-radius: 4px; background: rgba(215, 58, 73, 0.10); border: 1px solid rgba(215, 58, 73, 0.6); font-family: var(--font-mono, monospace); font-size: 0.88em; white-space: pre-wrap; }
 @media print { .sqlq-actions, .sqlq-feedback { display: none; } }
 
+/* Algorithmus Schritt fuer Schritt (```java-steps, Aufbau siehe page.ftl,
+   Verhalten js/javasteps.js). Pseudocode und Java stehen nebeneinander, auf
+   schmalen Bildschirmen untereinander; Zeilen werden per CSS-Zaehler nummeriert. */
+.jsteps {
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    border-radius: 6px;
+    background: var(--color-pre-bg);
+    padding: 0.8em 1.1em;
+    margin: 1em 0;
+}
+.jsteps-title { font-weight: 700; margin: 0 0 0.5em; }
+.jsteps-code { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8em; }
+.jsteps-code.jsteps-both { grid-template-columns: repeat(auto-fit, minmax(min(100%, 22em), 1fr)); }
+.jsteps-pane { min-width: 0; }
+.jsteps-label { margin: 0 0 0.25em; font-size: 0.8em; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-text-light); }
+.page-article .jsteps pre { margin: 0; background: var(--color-surface); overflow-x: auto; }
+.jsteps code { counter-reset: jl; }
+.jsteps .jl {
+    display: block; position: relative; min-height: 1.5em; line-height: 1.5;
+    padding: 0 0.5em 0 3em; margin: 0 -0.5em;
+    border-left: 3px solid transparent; border-radius: 2px;
+    transition: background-color 0.15s, opacity 0.15s;
+}
+.jsteps .jl::before {
+    counter-increment: jl; content: counter(jl);
+    position: absolute; left: 0; width: 2.2em; text-align: right;
+    color: var(--color-text-light); opacity: 0.7; user-select: none;
+}
+.jsteps .has-active .jl:not(.active) { opacity: 0.45; }
+.jsteps .jl.active { background: var(--color-mark); border-left-color: var(--color-warm); opacity: 1; color: #1b212a; }
+.jsteps .jl.active::before { opacity: 1; color: #1b212a; font-weight: 700; }
+:root[data-theme="dark"] .jsteps .jl.active { background: #5b4a14; color: #f3f0e0; }
+:root[data-theme="dark"] .jsteps .jl.active::before { color: #f3f0e0; }
+.jsteps-info { margin-top: 0.8em; min-height: 3.2em; }
+.jsteps-expl { margin: 0; font-size: 1.02em; }
+.jsteps-vars { display: flex; flex-wrap: wrap; gap: 0.4em; margin-top: 0.5em; }
+.jsteps-vars:empty { display: none; }
+.jsteps-var {
+    display: inline-flex; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size: 0.88em;
+    border: 1px solid var(--color-border); border-radius: 4px; overflow: hidden; background: var(--color-surface);
+}
+.jsteps-var-name { padding: 0.1em 0.5em; background: var(--color-code-bg); color: var(--color-text-light); }
+.jsteps-var-val { padding: 0.1em 0.6em; }
+.jsteps-var.chg { border-color: var(--color-warm); }
+.jsteps-var.chg .jsteps-var-val { background: var(--color-mark); color: #1b212a; font-weight: 700; }
+.jsteps-actions { display: flex; align-items: center; gap: 0.6em; flex-wrap: wrap; margin-top: 0.6em; }
+.jsteps-actions button {
+    font: inherit; font-size: 0.92em; cursor: pointer;
+    padding: 0.25em 0.9em; border-radius: 4px;
+    border: 1px solid var(--color-primary); background: var(--color-surface); color: var(--color-primary);
+}
+.jsteps-actions button.jsteps-next { background: var(--color-primary); color: var(--color-on-primary); }
+.jsteps-actions button:hover:not(:disabled) { background: var(--color-hover-bg); color: var(--color-hover-fg); }
+.jsteps-actions button:disabled { opacity: 0.45; cursor: default; }
+.jsteps-count { font-size: 0.9em; color: var(--color-text-light); }
+/* Druck: kein Bedienelement, alle Zeilen gleich stark, dafuer alle Schritte als Liste. */
+@media print {
+    .jsteps-actions, .jsteps-info { display: none; }
+    .jsteps .has-active .jl:not(.active) { opacity: 1; }
+    .jsteps-list[hidden] { display: block; margin: 0.6em 0 0; padding-left: 1.5em; font-size: 0.9em; }
+}
+
 /* "Mit Lösungen drucken" (js/print-solutions.js): der zweite Druckknopf setzt
    vor dem Drucken html.print-solutions. Dann erscheinen die Musterloesungen der
    SQL-Editoren, die richtigen Quiz-Optionen und die Erklaerungen. Der normale
