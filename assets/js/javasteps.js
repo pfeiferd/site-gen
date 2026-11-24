@@ -9,7 +9,10 @@
  * werden markiert) und die Knoepfe Zurueck / Weiter / Neu starten.
  *
  * Im Folienmodus steuern die Pfeiltasten zuerst die Schritte der aktuellen Folie
- * und wechseln erst danach die Folie. Die Beschriftungen gibt es auf Deutsch und
+ * und wechseln erst danach die Folie (js/slidesteps.js). Mit "viz: a (i, j)" im Kopf
+ * des Blocks zeichnet js/algoviz.js ausserdem das Array a als Saeulen, die Indexvariablen
+ * i und j als Zeiger - aus denselben Variablenwerten wie die Chips unter dem Code, also
+ * immer passend zur hervorgehobenen Zeile. Die Beschriftungen gibt es auf Deutsch und
  * Englisch; eine Site kann sie ueber ihre UI-Strings (jsteps.prev, jsteps.next,
  * jsteps.reset, jsteps.step, jsteps.vars) ueberschreiben. Beim Sprachwechsel
  * (Ereignis lang-change aus i18n.js) werden sie neu gesetzt.
@@ -52,6 +55,13 @@
             if (name) out.push([name, part.slice(i + 1).trim()]);
         });
         return out;
+    }
+
+    /* "[4, 8, 15]" -> [4, 8, 15]; null, wenn das keine Zahlenliste ist. */
+    function parseArray(text) {
+        if (!/^\s*\[.*\]\s*$/.test(text)) return null;
+        var nums = String(text).match(/-?\d+/g);
+        return nums ? nums.map(Number) : null;
     }
 
     /* Zerlegt den (eingefaerbten) Inhalt von <code> in Zeilen. Offene Farb-<span>s
@@ -117,6 +127,40 @@
         var count = block.querySelector('.jsteps-count');
         var idx = 0;
 
+        var vizName = block.getAttribute('data-viz-array');
+        var vizPtrs = (block.getAttribute('data-viz-ptrs') || '').split(',')
+            .map(function (n) { return n.trim(); }).filter(Boolean);
+        var vizEl = block.querySelector('.jsteps-viz');
+        function valueOf(step, name) {
+            var kv = step.v.filter(function (x) { return x[0] === name; })[0];
+            return kv ? kv[1] : null;
+        }
+        function arrayOf(step) {
+            var text = valueOf(step, vizName);
+            return text === null ? null : parseArray(text);
+        }
+        // Eine gemeinsame Skala fuer alle Schritte, damit die Saeulen nicht von Bild zu Bild springen.
+        var vizMax = 1;
+        if (vizEl && vizName) {
+            steps.forEach(function (s) { (arrayOf(s) || []).forEach(function (v) { vizMax = Math.max(vizMax, v); }); });
+        }
+        function renderViz() {
+            if (!vizEl || !vizName || !window.AlgoViz) return;
+            var a = arrayOf(steps[idx]);
+            if (!a) { vizEl.textContent = ''; return; }
+            var before = idx > 0 ? arrayOf(steps[idx - 1]) : null;
+            var changed = [];
+            if (before && before.length === a.length) {
+                a.forEach(function (v, i) { if (v !== before[i]) changed.push(i); });
+            }
+            var ptr = {};
+            vizPtrs.forEach(function (name) {
+                var v = valueOf(steps[idx], name);
+                if (v !== null && /^-?\d+$/.test(v)) ptr[name] = parseInt(v, 10);
+            });
+            window.AlgoViz.renderArray(vizEl, { a: a, ptr: ptr, changed: changed, max: vizMax });
+        }
+
         function mark(kind, nums) {
             var pane = panes[kind];
             if (!pane) return;
@@ -152,6 +196,7 @@
                     varsEl.appendChild(chip);
                 });
             }
+            renderViz();
             count.textContent = t('step').replace('{n}', idx + 1).replace('{m}', steps.length);
             prev.disabled = idx === 0;
             next.disabled = idx === steps.length - 1;
@@ -173,39 +218,9 @@
         next.addEventListener('click', function () { block.jsteps.move(1); });
         reset.addEventListener('click', function () { idx = 0; render(); });
         document.addEventListener('lang-change', labels);
+        if (window.SlideSteps) window.SlideSteps.register(block, block.jsteps);
         labels();
     }
 
-    var blocks = Array.prototype.slice.call(document.querySelectorAll('.jsteps'));
-    blocks.forEach(init);
-    blocks = blocks.filter(function (b) { return b.jsteps; });
-    if (!blocks.length) return;
-
-    /* Pfeiltasten: im Folienmodus zuerst die Schritte der aktuellen Folie, danach
-       (nicht mehr abgefangen) die Folie wechseln. Ausserhalb des Folienmodus nur,
-       wenn der Fokus in einem Block liegt. Capture-Phase, damit sie vor dem
-       Folien-Handler in footer.ftl laeuft. */
-    document.addEventListener('keydown', function (e) {
-        var d = (e.key === 'ArrowRight' || e.key === 'PageDown') ? 1
-              : (e.key === 'ArrowLeft' || e.key === 'PageUp') ? -1 : 0;
-        if (!d || e.altKey || e.ctrlKey || e.metaKey) return;
-        if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-        var scope;
-        if (document.documentElement.classList.contains('mode-slides')) {
-            scope = document.querySelector('.slide.active');
-        } else {
-            scope = e.target && e.target.closest ? e.target.closest('.jsteps') : null;
-        }
-        if (!scope) return;
-        var mine = blocks.filter(function (b) { return scope === b || scope.contains(b); });
-        if (d < 0) mine.reverse();
-        for (var i = 0; i < mine.length; i++) {
-            if (mine[i].jsteps.canMove(d)) {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                mine[i].jsteps.move(d);
-                return;
-            }
-        }
-    }, true);
+    Array.prototype.forEach.call(document.querySelectorAll('.jsteps'), init);
 }());

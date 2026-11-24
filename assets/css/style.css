@@ -2251,6 +2251,109 @@ mjx-container[display="true"] > svg {
     .jsteps-list[hidden] { display: block; margin: 0.6em 0 0; padding-left: 1.5em; font-size: 0.9em; }
 }
 
+/* Algorithmen-Animation (```algo-viz, Aufbau siehe page.ftl, Verhalten js/algoviz.js) und die
+   Saeulenansicht in java-steps (viz:). Dieselben drei Toene (blau, orange, tuerkis) tragen alle
+   Zustaende; sie sind fuer Hell und Dunkel mit dem Palette-Validator geprueft (alle Paare, auch
+   bei Farbsehschwaeche). Farbe ist nie der einzige Hinweis: dazu kommen Rahmen, Markierungen
+   (▼ ✓ ⇄ ?), Zeigerbeschriftungen und der Text unter dem Bild. */
+.algoviz, .jsteps-viz {
+    --viz-blue: #2a78d6; --viz-orange: #eb6834; --viz-aqua: #1baf7a;
+    --viz-bar: #8793a5; --viz-wall: #4b5563;
+}
+html[data-theme="dark"] .algoviz, html[data-theme="dark"] .jsteps-viz {
+    --viz-blue: #3987e5; --viz-orange: #d95926; --viz-aqua: #199e70;
+    --viz-bar: #6b7889; --viz-wall: #7a8696;
+}
+.algoviz {
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    border-radius: 6px;
+    background: var(--color-pre-bg);
+    padding: 0.8em 1.1em;
+    margin: 1em 0;
+}
+.algoviz-title { font-weight: 700; margin: 0 0 0.5em; }
+.algoviz-grid, .algoviz-graph { display: none; }
+.jsteps-viz { margin-top: 0.8em; }
+.jsteps-viz:empty { display: none; }
+.algoviz-svg { display: block; width: 100%; height: auto; max-height: 55vh; margin: 0 auto; }
+.algoviz-svg text { font-family: inherit; fill: var(--color-text); }
+.algoviz-note { margin: 0.6em 0 0; min-height: 2.9em; }
+.algoviz-stats { display: flex; flex-wrap: wrap; gap: 0.2em 1.2em; font-size: 0.9em; color: var(--color-text-light); }
+.algoviz-stats:empty { display: none; }
+.algoviz-stat strong { color: var(--color-text); font-variant-numeric: tabular-nums; }
+.algoviz-msg { margin: 0.4em 0 0; font-size: 0.9em; color: var(--color-text-light); }
+.algoviz-error { margin: 0; padding: 0.45em 0.7em; border-radius: 4px; background: rgba(215, 58, 73, 0.10); border: 1px solid rgba(215, 58, 73, 0.6); }
+
+/* Saeulen */
+.av-bar { fill: var(--viz-bar); }
+.av-bar.is-out:not(.is-sorted) { opacity: 0.35; }
+.av-bar.is-sorted, .av-bar.is-found { fill: var(--viz-aqua); }
+.av-bar.is-compare { fill: var(--viz-blue); }
+.av-bar.is-swap { fill: var(--viz-orange); }
+.av-bar.is-pivot { stroke: var(--color-text); stroke-width: 3; }
+.algoviz-svg .av-idx { fill: var(--color-text-light); }
+.algoviz-svg .av-mark { font-size: 18px; text-anchor: middle; }
+.algoviz-svg .av-ptr { fill: var(--color-primary); font-weight: 600; }
+.av-cell { fill: none; stroke: var(--viz-bar); stroke-width: 2; }
+.av-cell.is-used { opacity: 0.35; }
+.av-cell.is-compare { fill: var(--viz-blue); stroke: var(--viz-blue); }
+.algoviz-svg .av-cell.is-compare + .av-val { fill: #fff; }
+
+/* Raster */
+.gv-cell { fill: var(--color-surface); stroke: var(--color-border); stroke-width: 1; }
+.gv-cell.is-wall { fill: var(--viz-wall); stroke: var(--viz-wall); }
+.gv-cell.is-frontier { fill: var(--viz-blue); fill-opacity: 0.2; stroke: var(--viz-blue); stroke-width: 2; }
+.gv-cell.is-visited { fill: var(--viz-blue); fill-opacity: 0.5; stroke: var(--viz-blue); stroke-opacity: 0.5; }
+.gv-cell.is-current { fill: var(--viz-orange); stroke: var(--viz-orange); }
+.gv-cell.is-path { fill: var(--viz-aqua); stroke: var(--viz-aqua); }
+.gv-terrain { fill: var(--viz-wall); pointer-events: none; }
+.algoviz-svg .gv-label { font-weight: 700; text-anchor: middle; paint-order: stroke; stroke: var(--color-surface); stroke-width: 3px; stroke-linejoin: round; }
+.algoviz-svg .gv-cost { fill: var(--color-text-light); }
+.algoviz-svg .gv-dist { fill: var(--color-text); }
+
+/* Graph */
+.gr-edge { stroke: var(--viz-bar); stroke-width: 2; }
+.gr-edge.is-tree { stroke: var(--viz-blue); stroke-width: 3.5; }
+.gr-edge.is-path { stroke: var(--viz-aqua); stroke-width: 6; }
+.algoviz-svg .gr-weight { paint-order: stroke; stroke: var(--color-pre-bg); stroke-width: 5px; stroke-linejoin: round; font-weight: 600; }
+.gr-node { fill: var(--color-surface); stroke: var(--viz-bar); stroke-width: 2.5; }
+.gr-node.is-frontier { stroke: var(--viz-blue); stroke-width: 4; }
+.gr-node.is-visited { fill: var(--viz-blue); stroke: var(--viz-blue); }
+.gr-node.is-current { fill: var(--viz-orange); stroke: var(--viz-orange); }
+.gr-node.is-path { fill: var(--viz-aqua); stroke: var(--viz-aqua); }
+.algoviz-svg .gr-name { font-weight: 700; }
+.algoviz-svg .gr-node.is-visited + .gr-name { fill: #fff; }
+.algoviz-svg .gr-node.is-current + .gr-name, .algoviz-svg .gr-node.is-path + .gr-name { fill: #10151c; }
+.gr-ring { fill: none; stroke: var(--color-text); stroke-width: 2; }
+.gr-ring.is-goal { stroke-dasharray: 4 3; }
+.algoviz-svg .gr-dist, .algoviz-svg .gr-tag { fill: var(--color-text-light); }
+
+/* Legende und Bedienung */
+.algoviz-legend { display: flex; flex-wrap: wrap; gap: 0.3em 1.2em; list-style: none; padding: 0; margin: 0.6em 0 0; font-size: 0.85em; color: var(--color-text-light); }
+.page-article .algoviz-legend li { margin: 0; }
+.algoviz-swatch { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 2px; vertical-align: -0.1em; background: var(--viz-bar); border: 2px solid transparent; box-sizing: border-box; }
+.sw-compare, .sw-visited { background: var(--viz-blue); }
+.sw-swap, .sw-current { background: var(--viz-orange); }
+.sw-sorted, .sw-found, .sw-path { background: var(--viz-aqua); }
+.sw-pivot { border-color: var(--color-text); }
+.sw-range { background: var(--viz-bar); }
+.sw-frontier { background: rgba(42, 120, 214, 0.2); border-color: var(--viz-blue); }
+.sw-wall { background: var(--viz-wall); }
+.algoviz-actions { display: flex; align-items: center; gap: 0.6em; flex-wrap: wrap; margin-top: 0.6em; }
+.algoviz-actions button {
+    font: inherit; font-size: 0.92em; cursor: pointer;
+    padding: 0.25em 0.9em; border-radius: 4px;
+    border: 1px solid var(--color-primary); background: var(--color-surface); color: var(--color-primary);
+}
+.algoviz-actions button.algoviz-play { background: var(--color-primary); color: var(--color-on-primary); }
+.algoviz-actions button:hover:not(:disabled) { background: var(--color-hover-bg); color: var(--color-hover-fg); }
+.algoviz-actions button:disabled { opacity: 0.45; cursor: default; }
+.algoviz-speed { display: inline-flex; align-items: center; gap: 0.4em; font-size: 0.9em; color: var(--color-text-light); }
+.algoviz-speed input { width: 7em; }
+.algoviz-count { font-size: 0.9em; color: var(--color-text-light); }
+@media print { .algoviz-actions { display: none; } .algoviz-svg { max-height: none; } }
+
 /* "Mit Lösungen drucken" (js/print-solutions.js): der zweite Druckknopf setzt
    vor dem Drucken html.print-solutions. Dann erscheinen die Musterloesungen der
    SQL-Editoren, die richtigen Quiz-Optionen und die Erklaerungen. Der normale

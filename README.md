@@ -40,6 +40,7 @@ figures are compiled at build time with an installed LaTeX.
   - [Smooth scrolling](#smooth-scrolling)
   - [Syntax highlighting](#syntax-highlighting)
   - [Java step by step (`java-steps` blocks)](#java-step-by-step-java-steps-blocks)
+  - [Algorithm animations (`algo-viz` blocks)](#algorithm-animations-algo-viz-blocks)
 - [License](#license)
 
 ## Requirements
@@ -159,6 +160,9 @@ assets/                      generic UI files (CSS, JS, UI icons)
   js/quiz.js                 self-check quizzes (```quiz), loaded only on pages with a quiz
   js/sqlrun.js               SQL editors (```sql-db, ```sql-query), loaded only on pages with one
   js/javasteps.js            step-through Java/pseudocode (```java-steps), loaded only on pages with one
+  js/algoviz-algos.js        sorting/search/pathfinding algorithms as frame lists (no DOM, testable in Node)
+  js/algoviz.js              animation of ```algo-viz and the array view of `viz:`, loaded only on pages with one
+  js/slidesteps.js           arrow keys for step-through blocks (java-steps, algo-viz) before the slide changes
   js/print-solutions.js      second print button "print with solutions" (only with printSolutions=true)
   js/pglite/                 locally bundled PGlite 0.5.16 (PostgreSQL as WebAssembly, Apache-2.0);
                              fetched by sqlrun.js only when a reader uses an SQL editor
@@ -862,11 +866,65 @@ step: 1 | 1 | Explanation with `code`. | a=[4, 8, 15]; target=15
 ```
 ````
 
-`step: P | J | explanation | variables` – `P`/`J` are 1-based line numbers (`2`, `2,3`, `2-4`) in
-the pseudocode/Java section; variables are `name=value` pairs separated by `;`, and values that
+`step: P | J | explanation | variables` – `P`/`J` are 1-based line numbers (`2`, `2,3`, `2-4`, or
+`-` for none) in the pseudocode/Java section; variables are `name=value` pairs separated by `;`, and values that
 changed since the previous step are marked. In slide mode the arrow keys step through the code on
-the current slide before changing slide. Print shows the code and the list of all steps. See
-`content/en/java.md` for a full example.
+the current slide before changing slide (`assets/js/slidesteps.js`, shared with `algo-viz`). Print
+shows the code and the list of all steps. See `content/en/java.md` for a full example.
+
+`viz: a (i, j)` in the block head additionally draws the array variable `a` as bars and the index
+variables `i`, `j` as pointers, taken from the variable values of each step (cells that changed
+are orange) – see the next section.
+
+### Algorithm animations (`algo-viz` blocks)
+
+An `algo-viz` block animates sorting, searching and pathfinding step by step. The block only
+holds the **input**; the algorithms are built in (`assets/js/algoviz-algos.js`) and run in the
+reader's browser, so nothing is computed at build time and pages without such a block load none
+of it. The animation is an inline SVG with Back / Next / Play buttons and a speed slider (no
+autoplay); in slide mode the arrow keys step through it before the slide changes. Print shows the
+final picture.
+
+````
+```algo-viz
+title: Bubble sort                          (optional)
+algo: bubble-sort
+data: 5, 2, 9, 1, 7, 3                      (or: random: 8)
+```
+```algo-viz
+algo: astar                                 (bfs | dfs | dijkstra | astar)
+grid:
+S..#....
+.#.#.##.
+.#...#G.
+```
+```algo-viz
+algo: dijkstra                              (bfs | dfs | dijkstra on graphs)
+start: A
+goal: D
+graph:
+A 0,0
+B 2,0
+A-B 4
+```
+````
+
+- **`algo:`** `bubble-sort`, `selection-sort`, `insertion-sort`, `merge-sort`, `quick-sort`,
+  `linear-search`, `binary-search` (use `data:`/`random:` and, for searches, `target:`), or `bfs`,
+  `dfs`, `dijkstra`, `astar` (use `grid:` or, except `astar`, `graph:`).
+- **`data:`** up to 30 whole numbers 0–999. **`random: n`** gives `n` reproducible values.
+- **`grid:`** one line per row: `S` start, `G` goal, `#` wall, `.` free, `2`–`9` cost of entering
+  the cell (`dijkstra`, `astar`). Up to 40 × 25. **`graph:`** `A 0,0` is a node (name, position),
+  `A-B 4` an undirected edge with weight (default 1). `start:`/`goal:` name nodes; without `goal:`
+  the search visits everything reachable. Up to 26 nodes.
+- Colours (blue = compare/frontier, orange = swap/current, green = sorted/path) were checked with
+  the data-viz palette validator for light and dark mode and colour-vision deficiencies; every state
+  also has a shape cue and a sentence below the picture. At most 3000 frames per animation.
+- Bad input never fails the build: the block shows a message instead of the picture.
+- The animation runs a built-in reference implementation, **not** the Java on the slide. To keep
+  picture and highlighted code line in sync, use `viz:` in a `java-steps` block instead. A good
+  order is the standalone animation first (what happens?), the code afterwards (how?). See
+  `content/en/viz.md`.
 
 ## License
 

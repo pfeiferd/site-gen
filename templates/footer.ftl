@@ -545,6 +545,16 @@
 </script>
 <#-- Java-Schrittanzeige (```java-steps, siehe page.ftl). Muss nach dem Highlighting
      laufen, weil es die bereits eingefaerbten Zeilen einzeln markiert. -->
+<#-- Pfeiltasten fuer Schritt-Bloecke (java-steps, algo-viz): ein gemeinsamer Handler. -->
+<#if (hasViz!false) || (hasJavaSteps!false)>
+<script src="${content.rootpath}js/slidesteps.js?v=${.now?long?c}"></script>
+</#if>
+<#-- Algorithmen-Animation (```algo-viz und viz: in java-steps, siehe page.ftl). Muss vor
+     javasteps.js kommen, das AlgoViz.renderArray benutzt. -->
+<#if (hasViz!false)>
+<script src="${content.rootpath}js/algoviz-algos.js?v=${.now?long?c}"></script>
+<script src="${content.rootpath}js/algoviz.js?v=${.now?long?c}"></script>
+</#if>
 <#if (hasJavaSteps!false)>
 <script src="${content.rootpath}js/javasteps.js?v=${.now?long?c}"></script>
 </#if>
