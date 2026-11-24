@@ -71,10 +71,17 @@
     close.type = 'button';
     close.className = 'img-lightbox-close';
     close.setAttribute('aria-label', 'Schließen');
-    close.innerHTML = '&times;';
+    /* SVG statt Schriftzeichen: bleibt beim Zoomen scharf und sitzt mittig. */
+    close.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">'
+        + '<path d="M3 3 13 13M13 3 3 13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>';
 
-    overlay.appendChild(big);
-    overlay.appendChild(close);
+    /* Der Knopf haengt rechts oben am Bild selbst (Rahmen), nicht in der
+       Fensterecke - so bleibt er beim Zoomen ins Bild laenger sichtbar. */
+    var frame = document.createElement('div');
+    frame.className = 'img-lightbox-frame';
+    frame.appendChild(big);
+    frame.appendChild(close);
+    overlay.appendChild(frame);
     document.body.appendChild(overlay);
 
     /* Ist das Bild in einen Link auf eine Bilddatei gehuellt (klassische
@@ -108,7 +115,7 @@
     /* Klick auf den Hintergrund oder das Kreuz schliesst; Klick auf das Bild
        selbst laesst die Ansicht offen. */
     overlay.addEventListener('click', function (e) {
-        if (e.target !== big) hide();
+        if (e.target !== big && e.target !== frame) hide();
     });
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && overlay.classList.contains('open')) hide();

@@ -15,7 +15,7 @@ _You describe diagrams as text – a graphic is produced from it automatically w
 
 Put the diagram source into a code block of three backticks and write the language tag `plantuml` right after the opening backticks. When the website is built, the block is replaced by a finished graphic – in the result you only see the image.
 
-The diagrams are rendered locally (with PlantUML's Smetana layout, i.e. without Graphviz). Unchanged diagrams are skipped on a rebuild.
+The diagrams are rendered locally – with Graphviz if it is installed, otherwise with PlantUML's built-in Smetana layout (less careful layout, e.g. without the reading-direction triangles of association names). Unchanged diagrams are skipped on a rebuild.
 
 
 <div class="nextpage"></div>

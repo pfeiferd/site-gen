@@ -4,15 +4,19 @@ import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.SourceStringReader;
 import net.sourceforge.plantuml.core.DiagramDescription;
+import net.sourceforge.plantuml.dot.GraphvizUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 /**
@@ -34,8 +38,12 @@ import java.util.stream.Stream;
  *       {@code target/website/images/plantuml/lecture/Demo.svg}</li>
  * </ul>
  *
- * <p>Rendering uses PlantUML's built-in <em>Smetana</em> layout engine, so no
- * Graphviz installation is required. Each SVG carries a hash of its source in a
+ * <p>Rendering uses <em>Graphviz</em> ({@code dot}) when it is installed – found
+ * via {@code GRAPHVIZ_DOT}, the {@code PATH} or the usual install locations –
+ * and falls back to PlantUML's built-in <em>Smetana</em> layout otherwise.
+ * Smetana needs no installation but lays out less carefully and omits e.g. the
+ * reading-direction triangles of association names ({@code : name >}).
+ * {@code PLANTUML_LAYOUT=smetana} forces Smetana. Each SVG carries a hash of its source in a
  * trailing comment; unchanged diagrams are skipped across incremental rebuilds
  * ({@code mvn clean} wipes {@code target} and forces a re-render). Writing into
  * the site output keeps generated diagrams out of {@code assets/}.</p>
@@ -49,9 +57,15 @@ public final class PlantumlPreprocessor {
     /** Trailing SVG comment that records the hash of the diagram source. */
     private static final String HASH_MARKER = "<!-- puml-source-sha256:";
 
+    /** Usual Graphviz install locations, searched after GRAPHVIZ_DOT and the PATH. */
+    private static final List<String> DOT_CANDIDATES = List.of(
+            "/opt/homebrew/bin/dot", "/usr/local/bin/dot", "/opt/local/bin/dot", "/usr/bin/dot");
+
     private final Path contentDir;
     private final Path outputDir;
     private final MessageDigest digest;
+    /** Path of the Graphviz {@code dot} executable, or null to lay out with Smetana. */
+    private final String dot;
 
     private int renderedCount;
     private int skippedCount;
@@ -64,6 +78,55 @@ public final class PlantumlPreprocessor {
         this.contentDir = contentDir.toAbsolutePath().normalize();
         this.outputDir = outputDir.toAbsolutePath().normalize();
         this.digest = MessageDigest.getInstance("SHA-256");
+        this.dot = findDot();
+        if (dot != null) {
+            GraphvizUtils.setDotExecutable(dot);
+        }
+    }
+
+    /**
+     * Looks for a working Graphviz {@code dot}: {@code GRAPHVIZ_DOT}, then the
+     * {@code PATH}, then {@link #DOT_CANDIDATES}. Returns null if none answers
+     * {@code dot -V} or {@code PLANTUML_LAYOUT=smetana} is set.
+     */
+    private static String findDot() {
+        if ("smetana".equalsIgnoreCase(System.getenv("PLANTUML_LAYOUT"))) {
+            return null;
+        }
+        List<String> candidates = new ArrayList<>();
+        String env = System.getenv("GRAPHVIZ_DOT");
+        if (env != null && !env.isBlank()) {
+            candidates.add(env);
+        }
+        String path = System.getenv("PATH");
+        if (path != null) {
+            for (String dir : path.split(File.pathSeparator)) {
+                if (!dir.isBlank()) {
+                    candidates.add(Path.of(dir, "dot").toString());
+                }
+            }
+        }
+        candidates.addAll(DOT_CANDIDATES);
+        for (String candidate : candidates) {
+            if (Files.isExecutable(Path.of(candidate)) && answers(candidate)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    /** Whether {@code dot -V} runs successfully. */
+    private static boolean answers(String dot) {
+        try {
+            Process p = new ProcessBuilder(dot, "-V").redirectErrorStream(true).start();
+            p.getInputStream().readAllBytes();
+            return p.waitFor(30, TimeUnit.SECONDS) && p.exitValue() == 0;
+        } catch (IOException e) {
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     /**
@@ -105,6 +168,10 @@ public final class PlantumlPreprocessor {
             return;
         }
         Files.createDirectories(outputDir);
+        System.out.println(dot != null
+                ? "[plantuml] layout: Graphviz (" + dot + ")"
+                : "[plantuml] layout: Smetana – no Graphviz found or PLANTUML_LAYOUT=smetana"
+                        + " (install Graphviz for full-quality diagrams)");
 
         try (Stream<Path> files = Files.walk(contentDir)) {
             for (Path file : files.filter(Files::isRegularFile).sorted().toList()) {
@@ -171,14 +238,18 @@ public final class PlantumlPreprocessor {
                 && Files.readString(target, StandardCharsets.UTF_8).contains(HASH_MARKER + hash + " -->");
     }
 
-    /** Normalises the source and forces the Graphviz-free Smetana layout engine. */
+    /**
+     * Normalises the source and, without Graphviz, selects the Smetana layout.
+     * The pragma is part of the hashed source, so switching layouts re-renders.
+     */
     private String prepare(String source) {
         String s = source.strip();
+        String pragma = dot == null ? "\n!pragma layout smetana" : "";
         if (!s.contains("@start")) {
-            return "@startuml\n!pragma layout smetana\n" + s + "\n@enduml";
+            return "@startuml" + pragma + "\n" + s + "\n@enduml";
         }
         // Insert the pragma right after the first @start… directive.
-        return s.replaceFirst("(?m)(@start\\w+[^\\n]*)$", "$1\n!pragma layout smetana");
+        return dot == null ? s.replaceFirst("(?m)(@start\\w+[^\\n]*)$", "$1" + pragma) : s;
     }
 
     private String sha256(String text) {

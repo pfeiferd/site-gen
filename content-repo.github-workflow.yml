@@ -62,9 +62,10 @@ jobs:
           java-version: '17'
           cache: maven
 
-      # PlantUML rendert mit Smetana und braucht fontconfig samt einer Schrift.
-      - name: Schriften fuer PlantUML
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq fontconfig fonts-dejavu-core
+      # PlantUML legt mit Graphviz (dot) aus und braucht fontconfig samt einer
+      # Schrift; ohne Graphviz faellt es auf Smetana zurueck (schlechteres Layout).
+      - name: Graphviz und Schriften fuer PlantUML
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq graphviz fontconfig fonts-dejavu-core
 
       # Nur noetig, wenn der Inhalt ```tikz-Bloecke oder *.tikz-Dateien hat
       # (TikZ/pgfplots): latex + dvisvgm, ~230 MB, rund eine Minute. Ohne den

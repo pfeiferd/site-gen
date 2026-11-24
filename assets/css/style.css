@@ -898,15 +898,17 @@ html[data-theme="dark"] .map .leaflet-tile-pane {
 }
 
 /* Vollbild-Lightbox: verdeckt die Seite und zeigt das Bild so gross wie
-   moeglich. Klick irgendwo (oder Esc) schliesst sie wieder. */
+   moeglich. Klick irgendwo (oder Esc) schliesst sie wieder. Der Rand ist
+   so breit, dass der Schliessknopf an der Bildecke nie abgeschnitten wird. */
 .img-lightbox {
+    --lightbox-pad: max(2.5vmin, 1.6rem);
     position: fixed;
     inset: 0;
     z-index: 1000;
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 2.5vmin;
+    padding: var(--lightbox-pad);
     background: rgba(18, 24, 36, 0.88);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
@@ -917,9 +919,18 @@ html[data-theme="dark"] .map .leaflet-tile-pane {
     display: flex;
 }
 
+/* Rahmen genau um das Bild: an ihm haengt der Schliessknopf, damit er beim
+   Zoomen mit dem Bild wandert statt in der Fensterecke zu verschwinden. */
+.img-lightbox-frame {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+    cursor: default;
+}
+
 .img-lightbox img {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: calc(100vw - 2 * var(--lightbox-pad));
+    max-height: calc(100vh - 2 * var(--lightbox-pad));
     width: auto;
     height: auto;
     border-radius: 4px;
@@ -929,24 +940,29 @@ html[data-theme="dark"] .map .leaflet-tile-pane {
 
 .img-lightbox-close {
     position: absolute;
-    top: 0.6rem;
-    right: 0.9rem;
-    width: 2.4rem;
-    height: 2.4rem;
+    top: -1.1rem;
+    right: -1.1rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
-    line-height: 1;
     color: var(--color-white);
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(18, 24, 36, 0.92);
+    border: 2px solid var(--color-white);
     border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     cursor: pointer;
 }
 
+.img-lightbox-close svg {
+    width: 55%;
+    height: 55%;
+}
+
 .img-lightbox-close:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(60, 70, 90, 0.95);
 }
 
 /* Automatisches Inhaltsverzeichnis */

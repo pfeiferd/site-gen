@@ -15,7 +15,7 @@ _Diagramme beschreibst Du als Text – daraus entsteht beim Erstellen der Websit
 
 Setze den Diagramm-Quelltext in einen Codeblock aus drei Backticks und schreibe direkt hinter die öffnenden Backticks das Sprachkürzel `plantuml`. Beim Erstellen der Website wird der Block durch eine fertige Grafik ersetzt – Du selbst siehst im Ergebnis nur das Bild.
 
-Die Diagramme werden lokal gerendert (mit PlantUMLs Smetana-Layout, also ohne Graphviz). Unveränderte Diagramme werden bei erneutem Bauen übersprungen.
+Die Diagramme werden lokal gerendert – mit Graphviz, wenn es installiert ist, sonst mit PlantUMLs eingebautem Smetana-Layout (weniger sorgfältiges Layout, z.B. ohne die Leserichtungs-Dreiecke an Assoziationsnamen). Unveränderte Diagramme werden bei erneutem Bauen übersprungen.
 
 
 <div class="nextpage"></div>

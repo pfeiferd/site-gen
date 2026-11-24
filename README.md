@@ -47,7 +47,13 @@ figures are compiled at build time with an installed LaTeX.
 - **Maven 3.8+**
 
 All further dependencies (JBake, PlantUML, MathJax) are provided via Maven or bundled
-locally – **no** Graphviz and **no** internet connection are required at runtime.
+locally – **no** internet connection is required at runtime.
+
+Recommended: **Graphviz** (`dot`) for PlantUML layouts (`brew install graphviz`,
+`sudo apt-get install graphviz`). It is found via `GRAPHVIZ_DOT`, the `PATH` or the usual
+install locations. Without it PlantUML falls back to its built-in Smetana layout, which
+works but lays out less carefully and omits e.g. the reading-direction triangles of
+association names. `PLANTUML_LAYOUT=smetana` forces Smetana.
 
 Optional: a **TeX Live** installation with `latex`, `tikz`, `pgfplots`, `preview` and
 `dvisvgm`, only if the content uses `` ```tikz `` blocks (see
@@ -179,7 +185,7 @@ so these files survive the bake.
 
 | Tool | Purpose |
 |------|---------|
-| `PlantumlPreprocessor` | Entry point; renders `` ```plantuml `` blocks and `*.puml` files to SVGs under `target/website/images/plantuml/` using the Graphviz-free **Smetana** layout. Unchanged diagrams are skipped via SHA-256. Then invokes `TikzPreprocessor`, `MetaMerge`, `ImageCascade`, `IndexRedirects`, `DataBundle` and `AssetStrip`. |
+| `PlantumlPreprocessor` | Entry point; renders `` ```plantuml `` blocks and `*.puml` files to SVGs under `target/website/images/plantuml/` using Graphviz if installed, otherwise the built-in **Smetana** layout. Unchanged diagrams are skipped via SHA-256. Then invokes `TikzPreprocessor`, `MetaMerge`, `ImageCascade`, `IndexRedirects`, `DataBundle` and `AssetStrip`. |
 | `TikzPreprocessor` | Renders `` ```tikz `` blocks and `*.tikz` files to SVGs under `target/website/images/tikz/` by running an **installed** `latex` (DVI) and `dvisvgm` (`--no-fonts`: glyphs become paths). Same naming convention and SHA-256 skipping as PlantUML; scratch files under `target/tikz-work/`. Without a TeX installation it writes placeholder SVGs and warns; a figure that does not compile fails the build with the LaTeX log excerpt. |
 | `FencedBlocks` | Finds the fenced code blocks of one language the way the Markdown parser does (fence length, indentation, nesting), so that the preprocessors and `page.ftl` number the same blocks – a `` ```` `` block that merely *shows* a `` ```tikz `` example is not a figure. |
 | `MetaMerge` | Merges the `meta.properties` cascade into each `.md`'s front matter and writes the result to `target/staged-content/` (JBake's actual source folder). Evaluates `publish`, fills in a missing `date`, builds the i18n tables, and has `Bibliography` format citations. |
