@@ -54,6 +54,8 @@ Recommended: **Graphviz** (`dot`) for PlantUML layouts (`brew install graphviz`,
 install locations. Without it PlantUML falls back to its built-in Smetana layout, which
 works but lays out less carefully and omits e.g. the reading-direction triangles of
 association names. `PLANTUML_LAYOUT=smetana` forces Smetana.
+With Graphviz, lines are drawn as straight segments with corners (`skinparam linetype polyline`)
+instead of curves; a diagram that sets its own `skinparam linetype` keeps it.
 
 Optional: a **TeX Live** installation with `latex`, `tikz`, `pgfplots`, `preview` and
 `dvisvgm`, only if the content uses `` ```tikz `` blocks (see

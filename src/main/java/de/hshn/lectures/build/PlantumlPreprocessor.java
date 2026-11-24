@@ -244,12 +244,23 @@ public final class PlantumlPreprocessor {
      */
     private String prepare(String source) {
         String s = source.strip();
-        String pragma = dot == null ? "\n!pragma layout smetana" : "";
-        if (!s.contains("@start")) {
-            return "@startuml" + pragma + "\n" + s + "\n@enduml";
+        String header;
+        if (dot == null) {
+            header = "\n!pragma layout smetana";
+        } else if (!s.contains("linetype")) {
+            // Gerade Linien mit Ecken statt Bezierkurven (Hausstil fuer UML).
+            // "polyline" statt "ortho": bei ortho kann Graphviz Beschriftungen
+            // nicht sauber platzieren, sie landen auf Linien und Klassen. Ein
+            // Diagramm kann mit eigenem "skinparam linetype ..." abweichen.
+            header = "\nskinparam linetype polyline";
+        } else {
+            header = "";
         }
-        // Insert the pragma right after the first @start… directive.
-        return dot == null ? s.replaceFirst("(?m)(@start\\w+[^\\n]*)$", "$1" + pragma) : s;
+        if (!s.contains("@start")) {
+            return "@startuml" + header + "\n" + s + "\n@enduml";
+        }
+        // Insert the header right after the first @start… directive.
+        return header.isEmpty() ? s : s.replaceFirst("(?m)(@start\\w+[^\\n]*)$", "$1" + header);
     }
 
     private String sha256(String text) {

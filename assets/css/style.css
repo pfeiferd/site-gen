@@ -899,9 +899,11 @@ html[data-theme="dark"] .map .leaflet-tile-pane {
 
 /* Vollbild-Lightbox: verdeckt die Seite und zeigt das Bild so gross wie
    moeglich. Klick irgendwo (oder Esc) schliesst sie wieder. Der Rand ist
-   so breit, dass der Schliessknopf an der Bildecke nie abgeschnitten wird. */
+   so breit, dass der Schliessknopf schraeg vor der Bildecke Platz hat. */
 .img-lightbox {
-    --lightbox-pad: max(2.5vmin, 1.6rem);
+    --lightbox-close: 2.2rem;
+    --lightbox-gap: 0.35rem;
+    --lightbox-pad: max(2.5vmin, calc(var(--lightbox-close) + var(--lightbox-gap) + 0.4rem));
     position: fixed;
     inset: 0;
     z-index: 1000;
@@ -938,12 +940,13 @@ html[data-theme="dark"] .map .leaflet-tile-pane {
     box-shadow: 0 10px 45px rgba(0, 0, 0, 0.55);
 }
 
+/* Schraeg ausserhalb der rechten oberen Bildecke - beruehrt das Bild nicht. */
 .img-lightbox-close {
     position: absolute;
-    top: -1.1rem;
-    right: -1.1rem;
-    width: 2.2rem;
-    height: 2.2rem;
+    top: calc(-1 * (var(--lightbox-close) + var(--lightbox-gap)));
+    right: calc(-1 * (var(--lightbox-close) + var(--lightbox-gap)));
+    width: var(--lightbox-close);
+    height: var(--lightbox-close);
     padding: 0;
     display: flex;
     align-items: center;
