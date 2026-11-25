@@ -28,7 +28,8 @@ import java.util.stream.Stream;
  *   <li>{@code content/meta.properties}</li>
  *   <li>{@code content/<lecture>/meta.properties}</li>
  *   <li>{@code content/<lecture>/<lang>/meta.properties}</li>
- *   <li>the {@code .md}'s own front matter (wins)</li>
+ *   <li>the {@code .md}'s own front matter (wins) – in either notation of
+ *       {@link FrontMatter}; the staged copy always uses the JBake notation</li>
  * </ol>
  *
  * <p>While staging, {@link Bibliography} turns citations ({@code [@key]}) and a
@@ -44,8 +45,8 @@ import java.util.stream.Stream;
  */
 public final class MetaMerge {
 
-    /** Front-matter / body separator used by the JBake Markdown files. */
-    private static final String SEP = "~~~~~~";
+    /** Front-matter / body separator of the staged files JBake reads. */
+    private static final String SEP = FrontMatter.SEP;
     private static final String META = "meta.properties";
 
     private final Path contentDir;
@@ -90,7 +91,7 @@ public final class MetaMerge {
 
     private void stageMarkdown(Path file) throws IOException {
         String raw = TextIO.read(file);
-        String[] split = splitFrontMatter(raw);
+        String[] split = FrontMatter.split(raw);
 
         Map<String, String> fileFm = new LinkedHashMap<>();
         parseInto(split[0], fileFm);
@@ -150,24 +151,6 @@ public final class MetaMerge {
         Files.createDirectories(target.getParent());
         Files.writeString(target, out.toString(), StandardCharsets.UTF_8);
         staged++;
-    }
-
-    /** Splits raw markdown into [frontMatterText, bodyText] at the first SEP line. */
-    private static String[] splitFrontMatter(String raw) {
-        String[] lines = raw.split("\n", -1);
-        for (int i = 0; i < lines.length; i++) {
-            if (lines[i].strip().equals(SEP)) {
-                StringBuilder head = new StringBuilder();
-                for (int j = 0; j < i; j++) head.append(lines[j]).append('\n');
-                StringBuilder body = new StringBuilder();
-                for (int j = i + 1; j < lines.length; j++) {
-                    body.append(lines[j]);
-                    if (j < lines.length - 1) body.append('\n');
-                }
-                return new String[]{head.toString(), body.toString()};
-            }
-        }
-        return new String[]{"", raw}; // no front matter present
     }
 
     /** Reads meta.properties from contentDir down to {@code dir}, deeper wins. */

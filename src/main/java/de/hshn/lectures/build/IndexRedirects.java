@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 public final class IndexRedirects {
 
     private static final String META = "meta.properties";
-    private static final String SEP = "~~~~~~";
     /** Language folders in default-preference order (primary language first). */
     private static final List<String> LANGS = List.of("de", "en");
 
@@ -228,12 +227,10 @@ public final class IndexRedirects {
         }
     }
 
-    /** Reads a Markdown file's front matter (the {@code key=value} lines before {@code ~~~~~~}). */
+    /** Reads a Markdown file's front matter (either notation, see {@link FrontMatter}). */
     private static Map<String, String> frontMatter(Path md) throws IOException {
         Map<String, String> m = new LinkedHashMap<>();
-        String raw = TextIO.read(md);
-        for (String line : raw.split("\n", -1)) {
-            if (line.strip().equals(SEP)) break;
+        for (String line : FrontMatter.split(TextIO.read(md))[0].split("\n", -1)) {
             parseLine(line, m);
         }
         return m;

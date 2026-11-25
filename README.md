@@ -21,6 +21,7 @@ figures are compiled at build time with an installed LaTeX.
 - [Configuration](#configuration)
   - [Location of the content folder (`content.dir`)](#location-of-the-content-folder-contentdir)
   - [Site-wide metadata (`content/meta.properties`)](#site-wide-metadata-contentmetaproperties)
+  - [Front matter of a page](#front-matter-of-a-page)
   - [Lectures and the meta.properties cascade](#lectures-and-the-metaproperties-cascade)
     - [One lecture without a lecture folder](#one-lecture-without-a-lecture-folder)
   - [Visibility: `publish`](#visibility-publish)
@@ -254,6 +255,37 @@ without a hyperlink. All values are UTF-8 capable.
 | `printHeader` | text of the print header after the lecture title (default: "Fakultät Informatik, HS Heilbronn") |
 
 External links automatically open in a new tab (`target="_blank"`).
+
+### Front matter of a page
+
+Every `.md` starts with its front matter: `key=value` lines such as `title`, `navorder` or
+`publish`. Two notations are accepted, and both may be mixed within one site:
+
+```markdown
+<!--
+title=Transactions
+navorder=06
+publish=true
+-->
+# Transactions
+```
+
+```markdown
+title=Transactions
+navorder=06
+publish=true
+~~~~~~
+# Transactions
+```
+
+The **HTML comment** (first example) is recommended: Markdown viewers, editor plugins and the
+GitHub/GitLab preview hide it, so the file stays plain, well-rendered Markdown. It counts as
+front matter only if `<!--` and `-->` stand on lines of their own, the comment is the first
+non-blank content of the file, and every non-blank line in between is a `key=value` pair or a
+`#` comment – any other leading HTML comment stays part of the page.
+
+The **JBake notation** (second example: the lines up to `~~~~~~`) still works unchanged.
+Internally the build always hands JBake the second form.
 
 ### Lectures and the meta.properties cascade
 
