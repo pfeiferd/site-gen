@@ -359,6 +359,10 @@
                                  title: Aufgabe   Ueberschrift (optional)
                                  autocommit: off  jede Ausfuehrung zuruecknehmen (Standard:
                                                   on, Aenderungen bleiben wie in psql)
+                                 check: table     ohne Musterloesung pruefen: verglichen wird
+                                                  mit der Ergebnistabelle direkt davor
+                                                  (<details class="uebung-ergebnis">)
+                                 order: on        dabei auch die Reihenfolge der Zeilen pruefen
                                Nach einer Zeile "solution:" folgt die Musterloesung; dann
                                wird jedes Ergebnis mit ihr verglichen und es gibt
                                "Loesung zeigen". -->
@@ -386,13 +390,15 @@
             <#list body?matches('<pre><code class="language-sql-query">(.*?)</code></pre>', "s") as sm>
                 <#assign hasSql = true>
                 <#assign qDb = ""><#assign qTitle = ""><#assign qStart = ""><#assign qSol = "">
-                <#assign inSol = false><#assign sHead = true><#assign qAuto = "">
+                <#assign inSol = false><#assign sHead = true><#assign qAuto = ""><#assign qCheck = ""><#assign qOrder = "">
                 <#list sm?groups[1]?split("\n") as rawLine>
                     <#assign tl = rawLine?trim>
-                    <#assign dirM = tl?matches("^(db|title|autocommit):\\s*(.*)$", "i")>
+                    <#assign dirM = tl?matches("^(db|title|autocommit|check|order):\\s*(.*)$", "i")>
                     <#if sHead && dirM>
                         <#if dirM?groups[1]?lower_case == "db"><#assign qDb = dirM?groups[2]?trim>
                         <#elseif dirM?groups[1]?lower_case == "autocommit"><#assign qAuto = dirM?groups[2]?trim?lower_case>
+                        <#elseif dirM?groups[1]?lower_case == "check"><#assign qCheck = dirM?groups[2]?trim?lower_case>
+                        <#elseif dirM?groups[1]?lower_case == "order"><#assign qOrder = dirM?groups[2]?trim?lower_case>
                         <#else><#assign qTitle = quizFmt(dirM?groups[2]?trim)></#if>
                     <#elseif sHead && !tl?has_content>
                     <#elseif tl?lower_case == "solution:">
@@ -407,7 +413,9 @@
                 <#if (qRows < 4)><#assign qRows = 4></#if>
                 <#if (qRows > 16)><#assign qRows = 16></#if>
                 <#assign body = body?replace(sm?groups[0], '<div class="sqlq" data-db="' + qDb?replace('"', '&quot;') + '"'
-                    + qAuto?has_content?then(' data-autocommit="' + qAuto?replace('"', '&quot;') + '"', '') + '>'
+                    + qAuto?has_content?then(' data-autocommit="' + qAuto?replace('"', '&quot;') + '"', '')
+                    + (qCheck == "table")?then(' data-check="table"', '')
+                    + qOrder?matches("on|yes|true|1")?then(' data-ordered="true"', '') + '>'
                     + qTitle?has_content?then('<p class="sqlq-title">' + qTitle + '</p>', '')
                     + '<textarea class="sqlq-editor" rows="' + qRows?c + '" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="SQL">' + qStart + '</textarea>'
                     + '<div class="sqlq-actions"><button type="button" class="sqlq-run">Ausführen</button>'

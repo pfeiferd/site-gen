@@ -1983,6 +1983,16 @@ html[data-theme="dark"] .hljs-strong { color: #c9d1d9; }
         width: 100%;
     }
 
+    /* Code in gedruckten Folien: kleiner als der Fliesstext, damit Zeilen
+       bis rund 80 Zeichen auch in einer halben Folienspalte stehen. Laengere
+       Zeilen werden umbrochen statt abgeschnitten – auf Papier gibt es
+       keinen Scrollbalken. */
+    html.mode-slides .page-article pre code {
+        font-size: 7pt;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
     html.mode-slides .slide-nav,
     html.mode-slides .slide-counter { display: none !important; }
 
@@ -2010,6 +2020,16 @@ html[data-theme="dark"] .hljs-strong { color: #c9d1d9; }
     html.mode-slides .slide:has(.quiz) .slide-inner,
     html.mode-slides .slide:has(.page-toc) .slide-inner { overflow: visible; }
     html.mode-slides .quiz-q { break-inside: avoid; }
+
+    /* Ein Quiz beginnt im Folien-Druck immer auf einer neuen Seite – auch wenn
+       es im Markdown ohne eigenen Folienumbruch an andere Inhalte anschliesst.
+       Die Ueberschrift direkt davor wandert mit; folgt sie selbst auf eine
+       Ueberschrift (Abschnitt + Quiz), bleibt beides zusammen. */
+    html.mode-slides .slide-inner > :is(h2, h3, h4):has(+ .quiz):not(:first-child):not(:is(h1, h2, h3, h4) + *),
+    html.mode-slides .slide-inner > .quiz:not(:first-child):not(:is(h1, h2, h3, h4) + .quiz) {
+        break-before: page;
+        page-break-before: always;
+    }
 
     /* Umbruch VOR jeder Folie ausser der ersten -> genau eine Folie pro Seite,
        ohne Leerseite dazwischen und ohne erzwungenen Umbruch nach der letzten. */
@@ -2186,7 +2206,11 @@ mjx-container[display="true"] > svg {
 .page-article .sqlq-table td.sqlq-null { color: var(--color-text-light); font-style: italic; }
 .page-article .sqlq-info { margin: 0.2em 0 0.3em; font-size: 0.88em; color: var(--color-text-light); }
 .sqlq-error { margin: 0; padding: 0.45em 0.7em; border-radius: 4px; background: rgba(215, 58, 73, 0.10); border: 1px solid rgba(215, 58, 73, 0.6); font-family: var(--font-mono, monospace); font-size: 0.88em; white-space: pre-wrap; }
-@media print { .sqlq-actions, .sqlq-feedback { display: none; } }
+@media print {
+    .sqlq-actions, .sqlq-feedback { display: none; }
+    /* Leere Eingabefenster ohne Musterloesung (check: table) bringen auf Papier nichts */
+    .sqlq[data-check] { display: none; }
+}
 
 /* "Mit Lösungen drucken" (js/print-solutions.js): der zweite Druckknopf setzt
    vor dem Drucken html.print-solutions. Dann erscheinen die Musterloesungen der

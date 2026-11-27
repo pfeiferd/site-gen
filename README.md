@@ -380,6 +380,28 @@ is `false`.
 documentOnly=true
 ```
 
+### Checking SQL editors against a result table (`check: table`)
+
+A ```` ```sql-query ```` block normally checks a reader's query against a hidden model solution
+(`solution:`), which therefore ends up in the page's HTML. For exercises whose solution must not be
+published, use `check: table` instead: the editor compares its last result table with the expected
+result table directly before it (a `<details class="uebung-ergebnis">` containing a `<table>`).
+Column names and column order do not matter; numbers compare numerically (`14.9` = `14.90`). Row
+order is only checked with `order: on` – without it, any order is accepted, since SQL leaves it
+undefined without `ORDER BY`. Such editors are hidden in print.
+
+````markdown
+<details class="uebung-ergebnis"><summary>Ergebnistabelle</summary><table>…</table></details>
+
+```sql-query
+db: rezepte
+check: table
+order: on
+autocommit: off
+-- Ihre Anfrage
+```
+````
+
 ### Printing with solutions (`printSolutions`)
 
 On pages with a quiz (```` ```quiz ````) or SQL editors with a model solution

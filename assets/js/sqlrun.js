@@ -25,6 +25,11 @@
  * letzte Ergebnistabelle beider: gleiche Spaltenzahl und
  * gleiche Zeilen (Spaltennamen egal; Reihenfolge nur, wenn die Loesung mit
  * ORDER BY sortiert; Zahlen numerisch, also 2 = 2.0).
+ *
+ * Mit "check: table" gibt es keine Musterloesung im HTML: Verglichen wird mit der
+ * Ergebnistabelle direkt vor dem Editor (<details class="uebung-ergebnis"> mit
+ * einer <table>). Spaltennamen und Spaltenreihenfolge sind egal, die Reihenfolge
+ * der Zeilen nur mit "order: on".
  */
 (function () {
     var DEFAULTS = {
@@ -38,6 +43,8 @@
             more: '… {n} weitere nicht angezeigt',
             affected: '{cmd}: {n} betroffen', done: '{cmd} ausgeführt',
             ok: 'Richtig – das Ergebnis stimmt mit der Musterlösung überein.',
+            okTable: 'Richtig – das Ergebnis stimmt mit der Ergebnistabelle überein.',
+            wrongValsTable: 'Noch nicht richtig: Die Zeilen weichen von der Ergebnistabelle ab.',
             wrongCols: 'Noch nicht richtig: {exp} erwartet, {got} erhalten.',
             wrongRows: 'Noch nicht richtig: {exp} erwartet, {got} erhalten.',
             wrongVals: 'Noch nicht richtig: Die Zeilen weichen von der Musterlösung ab.',
@@ -59,6 +66,8 @@
             more: '… {n} more not shown',
             affected: '{cmd}: {n} affected', done: '{cmd} executed',
             ok: 'Correct – the result matches the model solution.',
+            okTable: 'Correct – the result matches the expected result table.',
+            wrongValsTable: 'Not yet: the rows differ from the expected result table.',
             wrongCols: 'Not yet: {exp} expected, {got} returned.',
             wrongRows: 'Not yet: {exp} expected, {got} returned.',
             wrongVals: 'Not yet: the rows differ from the model solution.',
@@ -310,16 +319,55 @@
         }
         return 's:' + s;
     }
-    function compare(got, exp, ordered) {
+    /* Alle Anordnungen der Zahlen 0..n-1 (nur fuer wenige Spalten sinnvoll). */
+    function permutations(n) {
+        if (n <= 0) return [[]];
+        var out = [];
+        permutations(n - 1).forEach(function (p) {
+            for (var i = 0; i <= p.length; i++) out.push(p.slice(0, i).concat([n - 1], p.slice(i)));
+        });
+        return out;
+    }
+    /* anyColOrder: Spalten duerfen in beliebiger Reihenfolge stehen (bis 6 Spalten). */
+    function compare(got, exp, ordered, anyColOrder) {
         if (!got) return 'noTable';
         if (got.fields.length !== exp.fields.length) return ['wrongCols', { exp: exp.fields.length, got: got.fields.length }];
         if (got.rows.length !== exp.rows.length) return ['wrongRows', { exp: exp.rows.length, got: got.rows.length }];
-        var a = got.rows.map(function (r) { return JSON.stringify(r.map(norm)); });
         var b = exp.rows.map(function (r) { return JSON.stringify(r.map(norm)); });
-        if (ordered && a.join('\n') === b.join('\n')) return 'ok';
-        var sa = a.slice().sort().join('\n'), sb = b.slice().sort().join('\n');
-        if (sa !== sb) return 'wrongVals';
-        return ordered ? 'wrongOrder' : 'ok';
+        var sb = b.slice().sort().join('\n');
+        var gotN = got.rows.map(function (r) { return r.map(norm); });
+        var perms = anyColOrder && got.fields.length <= 6 ? permutations(got.fields.length)
+            : [got.fields.map(function (f, i) { return i; })];
+        var best = 'wrongVals';
+        for (var k = 0; k < perms.length; k++) {
+            var p = perms[k];
+            var a = gotN.map(function (r) { return JSON.stringify(p.map(function (i) { return r[i]; })); });
+            if (ordered && a.join('\n') === b.join('\n')) return 'ok';
+            if (a.slice().sort().join('\n') === sb) {
+                if (!ordered) return 'ok';
+                best = 'wrongOrder';
+            }
+        }
+        return best;
+    }
+    /* Erwartete Tabelle aus der Ergebnistabelle direkt vor dem Editor lesen. */
+    function expectedTable(q) {
+        for (var e = q.previousElementSibling; e; e = e.previousElementSibling) {
+            if (e.classList.contains('sqlq') || /^H[1-6]$/.test(e.tagName)) break;
+            var tab = e.matches('details.uebung-ergebnis') ? e.querySelector('table')
+                : e.querySelector('details.uebung-ergebnis table');
+            if (!tab) continue;
+            var cells = function (tr, sel) {
+                return [].slice.call(tr.querySelectorAll(sel)).map(function (c) {
+                    var v = c.textContent.trim();
+                    return v === 'NULL' ? null : v;
+                });
+            };
+            var head = tab.querySelector('thead tr') || tab.querySelector('tr');
+            var rows = [].slice.call(tab.querySelectorAll('tbody tr')).map(function (tr) { return cells(tr, 'td'); });
+            return { fields: cells(head, 'th'), rows: rows };
+        }
+        return null;
     }
     function lastStatement(sql) {
         var parts = sql.replace(/--[^\n]*/g, '').split(';').filter(function (s) { return s.trim(); });
@@ -332,7 +380,7 @@
         if (!state) { fb.textContent = ''; fb.className = 'sqlq-feedback'; fb.removeAttribute('data-state'); return; }
         var key = Array.isArray(state) ? state[0] : state;
         fb.setAttribute('data-state', JSON.stringify(state));
-        fb.className = 'sqlq-feedback ' + (key === 'ok' ? 'sqlq-feedback-ok' : (key === 'empty' ? '' : 'sqlq-feedback-wrong'));
+        fb.className = 'sqlq-feedback ' + (key === 'ok' || key === 'okTable' ? 'sqlq-feedback-ok' : (key === 'empty' ? '' : 'sqlq-feedback-wrong'));
         fb.textContent = stateText(state);
     }
     function setStatus(q, key) {
@@ -366,11 +414,19 @@
             /* Musterloesung zuerst, auf demselben Stand und immer zurueckgerollt -
                sonst fuehrte sie z.B. ein INSERT der Aufgabe ein zweites Mal aus. */
             var solSql = sol ? sol.textContent : null;
-            var expected = solSql ? db.probe(solSql).then(lastTable, function () { return null; }) : Promise.resolve(null);
+            var byTable = q.getAttribute('data-check') === 'table';
+            var expected = byTable ? Promise.resolve(expectedTable(q))
+                : solSql ? db.probe(solSql).then(lastTable, function () { return null; }) : Promise.resolve(null);
             return expected.then(function (exp) {
                 return (autocommitOf(q) ? db.run(sql) : db.probe(sql)).then(function (results) {
                     render(out, results);
-                    if (exp) setFeedback(q, compare(lastTable(results), exp, /\border\s+by\b/i.test(lastStatement(solSql))));
+                    if (!exp) return;
+                    var res = byTable
+                        ? compare(lastTable(results), exp, q.getAttribute('data-ordered') === 'true', true)
+                        : compare(lastTable(results), exp, /\border\s+by\b/i.test(lastStatement(solSql)));
+                    if (byTable && res === 'ok') res = 'okTable';
+                    if (byTable && res === 'wrongVals') res = 'wrongValsTable';
+                    setFeedback(q, res);
                 }, function (err) { showError(out, err, !!(err && err.setup)); });
             });
         }, function (err) {
