@@ -171,6 +171,7 @@
             "title":   deT?has_content?then(deT, enT?has_content?then(enT, slugToTitle(pg.lecture))),
             "titleEn": enT?has_content?then(enT, deT?has_content?then(deT, slugToTitle(pg.lecture))),
             "icon":    pg.lectureIcon!"",
+            "order":   ((pg.lectureOrder!"50")?trim?number)?string("000"),
             "sidebarTitle": pg.sidebarTitle!"",
             "entry":   entryDe,
             "entryEn": entryEn
@@ -178,7 +179,9 @@
     </#if>
 </#list>
 </#list>
-<#assign lectures = lectures?sort_by("title") />
+<#-- Reihenfolge: lectureOrder (Zahl, Standard 50; kleiner = weiter vorn), bei
+     Gleichstand alphabetisch nach Titel (sort_by sortiert stabil). -->
+<#assign lectures = lectures?sort_by("title")?sort_by("order") />
 
 <#-- Titel der aktuellen Vorlesung in beiden Sprachen (fuer die Umschaltung). -->
 <#assign curTitle = slugToTitle(curLecture) />

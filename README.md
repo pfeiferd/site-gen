@@ -367,6 +367,17 @@ site without a baked `index.html`, which is what turns the site root into a redi
 lecture – see [One lecture without a lecture folder](#one-lecture-without-a-lecture-folder).
 That is how this repository is configured.
 
+### Order of the lecture cards (`lectureOrder`)
+
+The start page lists the lectures as cards, sorted alphabetically by title. To move a lecture,
+set `lectureOrder` in its `meta.properties` – a number, default `50`; smaller numbers come first,
+ties stay alphabetical.
+
+```properties
+# content/<lecture>/meta.properties – show this card last
+lectureOrder=99
+```
+
 ### Document-only lectures (`documentOnly`)
 
 Every lecture page can be shown either as a continuous **document** or as a **slide deck**, and a
