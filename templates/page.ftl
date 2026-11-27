@@ -426,6 +426,115 @@
                     + qSol?has_content?then('<pre class="sqlq-solution" hidden><code class="language-sql">' + qSol + '</code></pre>', '')
                     + '<div class="sqlq-out"></div></div>', "f")>
             </#list>
+            <#-- Algorithmus Schritt fuer Schritt: ```java-steps zeigt Java (und optional
+                 Pseudocode) nebeneinander; js/javasteps.js hebt je Schritt die passenden
+                 Zeilen hervor und blendet Erklaerung und Variablenwerte ein.
+                   title: Ueberschrift (optional, vor den Abschnitten)
+                   viz: a (i, j)   zeichnet das Array a als Saeulen, i und j als Zeiger (optional,
+                                   braucht js/algoviz.js; Werte aus den Variablen der Schritte)
+                   pseudo:   ab hier folgt der Pseudocode (optional)
+                   java:     ab hier folgt der Java-Code
+                   step: P | J | Erklaerung | Variablen
+                             P  Pseudocode-Zeilen (1-basiert, z.B. 2 oder 2,3 oder 2-4; leer = keine)
+                             J  Java-Zeilen, gleiche Schreibweise
+                             Variablen  "i=0; a[i]=7" (Strichpunkt-getrennt, optional);
+                                        Aenderungen gegenueber dem Vorschritt werden markiert
+                 Code steht unveraendert (Einrueckung zaehlt) bis zum naechsten Abschnitt oder
+                 step:. In der Erklaerung gehen **fett** und `code`. -->
+            <#assign hasViz = false>
+            <#assign hasJavaSteps = false>
+            <#list body?matches('<pre><code class="language-java-steps">(.*?)</code></pre>', "s") as jm>
+                <#assign hasJavaSteps = true>
+                <#assign jsTitle = ""><#assign jsPseudo = ""><#assign jsJava = ""><#assign jsSec = "head"><#assign jsList = ""><#assign jsVizName = ""><#assign jsVizPtrs = "">
+                <#list jm?groups[1]?split("\n") as rawJs>
+                    <#assign jsLine = rawJs?replace("\r", "")>
+                    <#assign jsTrim = jsLine?trim>
+                    <#assign jsTitleM = jsTrim?matches("^title:\\s*(.*)$", "i")>
+                    <#assign jsStepM = jsTrim?matches("^step:\\s*(.*)$", "i")>
+                    <#assign jsVizM = jsTrim?matches("^viz:\\s*(\\w+)\\s*(?:\\(([^)]*)\\))?\\s*$", "i")>
+                    <#if jsStepM>
+                        <#assign jsSec = "steps">
+                        <#assign jsParts = jsStepM?groups[1]?split("|")>
+                        <#assign jsP = ((jsParts[0])!"")?replace("[^0-9,\\-]", "", "r")>
+                        <#assign jsJ = ((jsParts[1])!"")?replace("[^0-9,\\-]", "", "r")>
+                        <#assign jsE = ((jsParts[2])!"")?trim>
+                        <#assign jsV = ((jsParts[3])!"")?trim>
+                        <#assign jsList = jsList + '<li data-p="' + jsP + '" data-j="' + jsJ + '"'
+                            + jsV?has_content?then(' data-v="' + jsV?replace('"', '&quot;') + '"', '') + '>' + quizFmt(jsE) + '</li>'>
+                    <#elseif jsSec == "head" && jsTitleM>
+                        <#assign jsTitle = quizFmt(jsTitleM?groups[1]?trim)>
+                    <#elseif jsSec == "head" && jsVizM>
+                        <#assign jsVizName = jsVizM?groups[1]>
+                        <#assign jsVizPtrs = ((jsVizM?groups[2])!"")?replace("[^A-Za-z0-9_,]", "", "r")>
+                        <#assign hasViz = true>
+                    <#elseif jsSec == "head" && !jsTrim?has_content>
+                    <#elseif jsTrim?lower_case == "pseudo:" && jsSec != "steps">
+                        <#assign jsSec = "pseudo">
+                    <#elseif jsTrim?lower_case == "java:" && jsSec != "steps">
+                        <#assign jsSec = "java">
+                    <#elseif jsSec == "pseudo">
+                        <#assign jsPseudo = jsPseudo + jsLine + "\n">
+                    <#elseif jsSec == "java">
+                        <#assign jsJava = jsJava + jsLine + "\n">
+                    </#if>
+                </#list>
+                <#assign jsPseudo = jsPseudo?replace("^\\n+|\\s+$", "", "r")>
+                <#assign jsJava = jsJava?replace("^\\n+|\\s+$", "", "r")>
+                <#assign body = body?replace(jm?groups[0], '<div class="jsteps"'
+                    + jsVizName?has_content?then(' data-viz-array="' + jsVizName + '" data-viz-ptrs="' + jsVizPtrs + '"', '') + '>'
+                    + jsTitle?has_content?then('<p class="jsteps-title">' + jsTitle + '</p>', '')
+                    + '<div class="jsteps-code' + jsPseudo?has_content?then(' jsteps-both', '') + '">'
+                    + jsPseudo?has_content?then('<div class="jsteps-pane" data-kind="pseudo"><p class="jsteps-label">Pseudocode</p><pre><code class="language-plaintext">' + jsPseudo + '</code></pre></div>', '')
+                    + '<div class="jsteps-pane" data-kind="java"><p class="jsteps-label">Java</p><pre><code class="language-java">' + jsJava + '</code></pre></div>'
+                    + '</div>'
+                    + jsVizName?has_content?then('<div class="jsteps-viz"></div>', '')
+                    + '<div class="jsteps-info"><p class="jsteps-expl" aria-live="polite"></p><div class="jsteps-vars"></div></div>'
+                    + '<div class="jsteps-actions"><button type="button" class="jsteps-prev">Zurück</button>'
+                    + '<button type="button" class="jsteps-next">Weiter</button>'
+                    + '<button type="button" class="jsteps-reset">Neu starten</button>'
+                    + '<span class="jsteps-count" aria-live="polite"></span></div>'
+                    + '<ol class="jsteps-list" hidden>' + jsList + '</ol></div>', "f")>
+            </#list>
+            <#-- Algorithmen-Animation: ```algo-viz rechnet js/algoviz-algos.js im Browser durch
+                 und zeigt die Einzelbilder (js/algoviz.js) zum Durchgehen.
+                   algo: bubble-sort | selection-sort | insertion-sort | merge-sort | quick-sort
+                         | linear-search | binary-search | bfs | dfs | dijkstra | astar
+                   title: Ueberschrift (optional)
+                   data: 5, 2, 9        Werte (0-999) fuer Sortieren/Suchen, oder
+                   random: 8            n Zufallswerte (immer dieselben)
+                   target: 7            gesuchter Wert (Suchen)
+                   start: A  goal: D    Knoten (Graph; im Raster stehen S und G im Bild)
+                   grid:                darunter das Raster: S Start, G Ziel, # Mauer, . frei,
+                                        Ziffern 2-9 = Kosten des Feldes
+                   graph:               darunter Knoten "A 0,0" und Kanten "A-B 4"
+                 Eingaben und Fehler prueft das Skript im Browser (Meldung statt Bild). -->
+            <#function vzAttr n v>
+                <#return v?has_content?then(' data-' + n + '="' + v?replace('"', '&quot;') + '"', '')>
+            </#function>
+            <#list body?matches('<pre><code class="language-algo-viz">(.*?)</code></pre>', "s") as am>
+                <#assign hasViz = true>
+                <#assign vz = {"algo": "", "title": "", "data": "", "random": "", "target": "", "start": "", "goal": ""}>
+                <#assign vzSec = "head"><#assign vzGrid = ""><#assign vzGraph = "">
+                <#list am?groups[1]?split("\n") as rawVz>
+                    <#assign vzLine = rawVz?replace("\r", "")>
+                    <#assign vzTrim = vzLine?trim>
+                    <#assign vzDir = vzTrim?matches("^(algo|title|data|random|target|start|goal):\\s*(.*)$", "i")>
+                    <#if vzTrim?lower_case == "grid:"><#assign vzSec = "grid">
+                    <#elseif vzTrim?lower_case == "graph:"><#assign vzSec = "graph">
+                    <#elseif vzDir>
+                        <#assign vz = vz + {vzDir?groups[1]?lower_case: vzDir?groups[2]?trim}>
+                    <#elseif vzSec == "grid"><#assign vzGrid = vzGrid + vzLine + "\n">
+                    <#elseif vzSec == "graph"><#assign vzGraph = vzGraph + vzLine + "\n">
+                    </#if>
+                </#list>
+                <#assign body = body?replace(am?groups[0], '<div class="algoviz"'
+                    + vzAttr("algo", vz.algo) + vzAttr("data", vz.data) + vzAttr("random", vz.random)
+                    + vzAttr("target", vz.target) + vzAttr("start", vz.start) + vzAttr("goal", vz.goal) + '>'
+                    + vz.title?has_content?then('<p class="algoviz-title">' + quizFmt(vz.title) + '</p>', '')
+                    + vzGrid?has_content?then('<div class="algoviz-grid">' + vzGrid + '</div>', '')
+                    + vzGraph?has_content?then('<div class="algoviz-graph">' + vzGraph + '</div>', '')
+                    + '</div>', "f")>
+            </#list>
             <#-- Gleichlautende Ueberschriften (z.B. zweimal "Uebungsaufgabe") bekommen von
                  Flexmark dieselbe id. Damit Anker, Inhaltsverzeichnis und Nummerierung sie
                  unterscheiden, erhalten Wiederholungen ein Suffix (-2, -3, ...). Jede Ueberschrift
