@@ -176,6 +176,7 @@ public final class PlantumlPreprocessor {
 
         try (Stream<Path> files = Files.walk(contentDir)) {
             for (Path file : files.filter(Files::isRegularFile).sorted().toList()) {
+                if (ImageCascade.inStaticApp(contentDir, file)) continue;   // eigenstaendige HTML-App
                 processFile(file);
             }
         }

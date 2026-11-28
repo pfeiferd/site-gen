@@ -367,6 +367,25 @@ site without a baked `index.html`, which is what turns the site root into a redi
 lecture – see [One lecture without a lecture folder](#one-lecture-without-a-lecture-folder).
 That is how this repository is configured.
 
+### Static HTML apps (`app=true`)
+
+A top-level folder under `content/` whose `meta.properties` says `app=true` is a *static app*: it
+is copied verbatim to `<output>/<folder>/` (by `ImageCascade`) instead of being treated as a
+lecture – no templates, no menu, no search; Markdown inside it (a README) is not rendered. The
+folder brings its own `index.html`, scripts and styles. Link it from a page like any other URL,
+e.g. `[My app](/myapp/)`.
+
+```properties
+# content/myapp/meta.properties
+app=true
+# as for lectures: false keeps the folder out of the built site (default: published)
+publish=true
+```
+
+`publish=false` in the site-wide `content/meta.properties` applies to apps as well. The
+`meta.properties` itself is a control file and is not copied. A folder without `app=true` is not
+published this way, even if it contains an `index.html`.
+
 ### Order of the lecture cards (`lectureOrder`)
 
 The start page lists the lectures as cards, sorted alphabetically by title. To move a lecture,

@@ -81,7 +81,7 @@ public final class MetaMerge {
 
         try (Stream<Path> files = Files.walk(contentDir)) {
             for (Path f : files.filter(Files::isRegularFile).sorted().toList()) {
-                if (f.getFileName().toString().endsWith(".md")) {
+                if (f.getFileName().toString().endsWith(".md") && !ImageCascade.inStaticApp(contentDir, f)) {
                     stageMarkdown(f);
                 }
             }
@@ -184,12 +184,12 @@ public final class MetaMerge {
         return !isFalse(fileFm.get("publish"));
     }
 
-    private static boolean isFalse(String value) {
+    static boolean isFalse(String value) {
         return value != null && value.trim().equalsIgnoreCase("false");
     }
 
     /** Loads a {@code key=value} properties file into a map (empty if the file is absent). */
-    private static Map<String, String> loadMap(Path file) throws IOException {
+    static Map<String, String> loadMap(Path file) throws IOException {
         Map<String, String> m = new LinkedHashMap<>();
         if (Files.isRegularFile(file)) {
             parseInto(TextIO.read(file), m);

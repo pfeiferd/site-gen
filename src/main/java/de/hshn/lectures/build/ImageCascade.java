@@ -90,6 +90,38 @@ public final class ImageCascade {
         new ImageCascade(contentDir, out).run();
     }
 
+    /** Marks a top-level content folder as a static app in its {@code meta.properties}. */
+    private static final String APP_KEY = "app";
+    private static final String META = "meta.properties";
+
+    /**
+     * A static app is a top-level content folder whose {@code meta.properties} says
+     * {@code app=true}: it is published verbatim to {@code <output>/<folder>/} instead of
+     * being treated as a lecture, and Markdown inside it (a README, say) is neither
+     * staged nor rendered. As everywhere, {@code publish=false} – in that file or in the
+     * site-wide {@code content/meta.properties} – keeps it out of the site.
+     */
+    static boolean isStaticApp(Path dir) {
+        try {
+            String v = MetaMerge.loadMap(dir.resolve(META)).get(APP_KEY);
+            return v != null && v.trim().equalsIgnoreCase("true");
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /** Is the static app in {@code dir} to be published ({@code publish} not false)? */
+    static boolean isPublishedApp(Path contentDir, Path dir) throws IOException {
+        return !MetaMerge.isFalse(MetaMerge.loadMap(dir.resolve(META)).get("publish"))
+                && !MetaMerge.isFalse(MetaMerge.loadMap(contentDir.resolve(META)).get("publish"));
+    }
+
+    /** Does {@code file} lie inside a static app folder of {@code contentDir}? */
+    static boolean inStaticApp(Path contentDir, Path file) {
+        Path rel = contentDir.toAbsolutePath().normalize().relativize(file.toAbsolutePath().normalize());
+        return rel.getNameCount() > 1 && isStaticApp(contentDir.resolve(rel.getName(0)));
+    }
+
     /** Materialises the per-language image folders for every lecture. */
     public void run() throws IOException {
         if (!Files.isDirectory(contentDir)) {
@@ -131,6 +163,19 @@ public final class ImageCascade {
                 String slug = lecture.getFileName().toString();
                 if (slug.equals(IMAGES) || slug.equals(FILES) || slug.equals(DATA_DIR) || slug.equals("common") || LANGS.contains(slug)) {
                     continue; // site-wide images, or parts of a lecture in the flat layout
+                }
+                if (isStaticApp(lecture)) {
+                    // Eigenstaendige HTML-App (meta.properties mit app=true): unveraendert nach
+                    // <output>/<slug>/ - JBake liest sie nicht, die Templates greifen nicht.
+                    if (isPublishedApp(contentDir, lecture)) {
+                        copyTree(lecture, outputDir.resolve(slug));
+                        Files.deleteIfExists(outputDir.resolve(slug).resolve(META));   // nur Steuerdatei
+                        System.out.println("[apps] static app published: " + slug + "/");
+                    } else {
+                        deleteRecursive(outputDir.resolve(slug));   // Rest eines frueheren Builds
+                        System.out.println("[apps] static app not published (publish=false): " + slug + "/");
+                    }
+                    continue;
                 }
                 materialise(lecture, outputDir.resolve(slug), globalImages);
             }
